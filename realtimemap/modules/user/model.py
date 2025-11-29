@@ -16,7 +16,7 @@ from sqlalchemy_file import ImageField
 
 from auth.user_database import MySQLAlchemyUserDatabase
 from modules import BaseSqlModel
-from modules.mixins import IntIdMixin
+from modules.mixins import IntIdMixin, TimeMarkMixin
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,7 +37,7 @@ class OAuthAccount(SQLAlchemyBaseOAuthAccountTable[int], BaseSqlModel, IntIdMixi
         )
 
 
-class User(BaseSqlModel, IntIdMixin, SQLAlchemyBaseUserTable[int]):
+class User(BaseSqlModel, IntIdMixin, SQLAlchemyBaseUserTable[int], TimeMarkMixin):
     __tablename__ = "users"
     phone: Mapped[str] = mapped_column(
         String(32), unique=True, nullable=True, index=True
