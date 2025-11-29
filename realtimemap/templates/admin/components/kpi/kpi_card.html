@@ -1,0 +1,49 @@
+{% macro kpi_card(title, value, subtitle='', icon='', color='primary', trend_data=None) %}
+    {#
+      Универсальная KPI карточка
+
+      Параметры:
+      - title: Заголовок карточки (str)
+      - value: Основное значение (int/str)
+      - subtitle: Подзаголовок/дополнительная информация (str, optional)
+      - icon: Font Awesome класс иконки (str, optional, например 'fa-users')
+      - color: Цветовая тема ('primary', 'success', 'danger', 'warning', 'info')
+      - trend_data: Данные для отображения тренда (dict с ключами: change, change_percent, trend_icon, trend_color)
+  #}
+    <div class="col-md-3">
+        <div class="kpi-card kpi-card--{{ color }}">
+            <div class="kpi-card__body">
+                <div class="kpi-card__content">
+                    <div class="kpi-card__header">
+                        <h6 class="kpi-card__title">{{ title }}</h6>
+                    </div>
+                    <div class="kpi-card__value">
+                        <h2 class="kpi-card__number">{{ value }}</h2>
+                    </div>
+
+                    {% if trend_data %}
+                        <div class="kpi-card__trend">
+                      <span class="kpi-trend {{ trend_data.trend_color }}">
+                          <i class="fa {{ trend_data.trend_icon }}"></i>
+                          <span class="kpi-trend__text">{{ trend_data.change_text }}</span>
+                          <span class="kpi-trend__percent">({{ trend_data.change_percent }}%)</span>
+                      </span>
+                        </div>
+                    {% endif %}
+
+                    {% if subtitle %}
+                        <div class="kpi-card__subtitle">
+                            <small class="text-muted">{{ subtitle }}</small>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if icon %}
+                    <div class="kpi-card__icon kpi-icon--{{ color }}">
+                        <i class="fa {{ icon }}"></i>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endmacro %}

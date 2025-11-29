@@ -1,0 +1,13 @@
+{% from "components/kpi/kpi_card.html" import kpi_card %}
+
+
+{% macro today_content_maker_kpi_card(data) %}
+    {{ kpi_card(
+          title='Unique content makers today',
+          value=data.create_maker_today,
+          subtitle="Ratio to yesterday's quantity",
+          icon='fa-person-walking',
+          color='success',
+          trend_data=data
+      ) }}
+{% endmacro %}

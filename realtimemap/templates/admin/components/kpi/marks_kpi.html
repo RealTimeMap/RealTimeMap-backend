@@ -1,0 +1,35 @@
+
+
+{% from "components/kpi/kpi_card.html" import kpi_card %}
+
+{% macro new_marks_kpi_card(data) %}
+    {{ kpi_card(
+          title='New marks today',
+          value=data.new_marks_today,
+          subtitle='New marks created compared to yesterday',
+          icon='fa-map-marker-alt',
+          color='success',
+          trend_data=data
+      ) }}
+{% endmacro %}
+
+{% macro total_marks_kpi_card(data) %}
+    {{ kpi_card(
+          title='Total Marks',
+          value=data.total_marks,
+          subtitle='Total marks in the system',
+          icon='fa-location-dot',
+          color='info'
+      ) }}
+{% endmacro %}
+
+{% macro marks_ratio_kpi_card(data) %}
+    {{ kpi_card(
+        title='Active Marks',
+        value=data.active_marks,
+        subtitle='Active marks today',
+        icon='fa-check-circle',
+        color='warning',
+        trend_data=data
+    ) }}
+{% endmacro %}
