@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, Optional
 
 from errors.http2 import AuthenticationError
 from modules.user_ban.schemas import ReadUsersBan
@@ -14,7 +14,7 @@ from .schemas import (
 from ..gamefication.schemas.level.crud import LevelRead
 
 if TYPE_CHECKING:
-    from modules import User, UserSubscription
+    from modules import User
     from fastapi import Request
     from core.common.repository import (
         UserRepository,

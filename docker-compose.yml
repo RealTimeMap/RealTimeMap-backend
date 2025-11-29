@@ -2,11 +2,23 @@ services:
   redis:
     image: redis:latest
     container_name: redis-service
-    command: redis-server --bind 0.0.0.0 --appendonly yes
+    command: >
+      redis-server
+      --bind 0.0.0.0
+      --appendonly yes
+      --appendfsync everysec
+      --tcp-keepalive 60
+      --timeout 0
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
     ports:
       - "6379:6379"
     networks:
-      - app-network
+      app-network:
+        aliases:
+          - redis
     volumes:
       - redis_data:/data
     healthcheck:
@@ -14,6 +26,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
   backend:
     build: .
@@ -43,12 +56,21 @@ services:
   celery:
     build: .
     container_name: celery-worker
-    command: ../.venv/bin/celery --app core.celery.celery_app worker --loglevel INFO
+    command: ../.venv/bin/celery --app core.celery.celery_app worker --loglevel INFO --max-tasks-per-child 1000 --time-limit 300
     networks:
       - app-network
     depends_on:
-      - redis
-      - backend
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "celery --app core.celery.celery_app inspect ping -d celery@$$HOSTNAME"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   celery-beat:
     build: .
@@ -57,9 +79,13 @@ services:
     networks:
       - app-network
     depends_on:
-      - redis
-      - backend
-      - celery
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+      celery:
+        condition: service_started
+    restart: unless-stopped
 
   celery-flower:
     build: .
@@ -70,9 +96,13 @@ services:
     networks:
       - app-network
     depends_on:
-      - redis
-      - backend
-      - celery
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+      celery:
+        condition: service_started
+    restart: unless-stopped
 
 networks:
   app-network:

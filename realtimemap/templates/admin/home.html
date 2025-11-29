@@ -1,10 +1,14 @@
 {% extends "layout.html" %}
+{% from "components/kpi/activity_kpi.html" import activity_kpi_card %}
+{% from "components/kpi/marks_kpi.html" import new_marks_kpi_card, total_marks_kpi_card, marks_ratio_kpi_card %}
+{% from "components/kpi/users_kpi.html" import new_users_kpi_card, total_users_kpi_card %}
+{% from "components/kpi/content_maker_kpi.html" import today_content_maker_kpi_card %}
 {% block header %}
     <div class="d-flex justify-content-between align-items-center">
         <div class="row g-2 align-items-center">
             <div class="col">
                 <h2 class="page-title">
-                    Home
+                    KPI Dashboard
                 </h2>
             </div>
         </div>
@@ -18,5 +22,11 @@
 {% endblock %}
 
 {% block content %}
-    <h1>Контент главной страницы</h1>
+    {{ activity_kpi_card(active_kpi) }}
+    {{ new_users_kpi_card(users_kpi) }}
+    {{ total_users_kpi_card(users_kpi) }}
+    {{ total_marks_kpi_card(marks_kpi) }}
+    {{ new_marks_kpi_card(new_marks_kpi) }}
+    {{ today_content_maker_kpi_card(content_maker_kpi) }}
+    {{ marks_ratio_kpi_card(marks_kpi) }}
 {% endblock content %}

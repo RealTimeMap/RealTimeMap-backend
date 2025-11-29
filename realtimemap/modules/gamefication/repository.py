@@ -84,7 +84,7 @@ class PgUserExpHistoryRepository(UserExpHistoryRepository):
             .where(
                 UserExpHistory.user_id == user_id,
                 UserExpHistory.action_id == action_id,
-                UserExpHistory.is_revoked == False,
+                not UserExpHistory.is_revoked,
             )
         )
         result = await self.adapter.execute_scalar(stmt)

@@ -25,7 +25,8 @@
     --accent-primary-rgb: 122, 175, 235;
     --accent-primary-deep: #8bc0f7;
     --accent-danger: #ff4d4f;
-    --accent-succses: #82f00d;
+    --accent-success: #82f00d;
+    --accent-succses: #82f00d; /* Deprecated: use --accent-success */
     --shadow-color: rgba(0, 0, 0, 0.2);
 }
 

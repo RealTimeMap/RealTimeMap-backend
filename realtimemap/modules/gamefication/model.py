@@ -133,7 +133,7 @@ class UserExpHistory(BaseSqlModel, IntIdMixin, TimeMarkMixin):
             "user_id",
             "action_id",
             "created_at",
-            postgresql_where=(is_revoked == False),
+            postgresql_where=(not is_revoked),
         ),
         # Поиск по источнику
         Index("ix_exp_hist_source", "source_type", "source_id"),

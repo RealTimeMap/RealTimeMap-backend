@@ -6,7 +6,6 @@ from database.adapter import PgAdapter
 from modules.subscription.model import SubscriptionPlan, SubPlanType
 from modules.subscription.repository import PgSubscriptionPlanRepository
 from modules.subscription.schemas import CreateSubscriptionPlan, UpdateSubscriptionPlan
-from .fixtures import test_subscription_plan, test_subscription_plans
 
 
 class TestSubscriptionPlanRepository:

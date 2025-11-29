@@ -12,7 +12,7 @@ from .schemas import CreateSubscriptionPlan, UpdateSubscriptionPlan
 from .service import SubscriptionService
 
 if TYPE_CHECKING:
-    from core.common.repository import SubscriptionPlanRepository
+    from core.common.repository import SubscriptionPlanRepository, UserSubscriptionRepository
 
 
 async def get_pg_subscription_plan_repository(
@@ -26,7 +26,7 @@ async def get_pg_subscription_plan_repository(
 
 async def get_subscription_service(
     user_subscription_repo: Annotated[
-        "IUserSubscriptionRepository", Depends(get_user_subscription_repository)
+        "UserSubscriptionRepository", Depends(get_user_subscription_repository)
     ],
     subscription_repo: Annotated[
         "SubscriptionPlanRepository", Depends(get_pg_subscription_plan_repository)

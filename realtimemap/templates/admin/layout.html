@@ -1,11 +1,13 @@
 {% extends "@starlette-admin/layout.html" %}
 {% block head_css %}
     {{ super() }}
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='icons/favicon.ico') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='admin/css/root.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='admin/css/btn.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='admin/css/table.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='admin/css/form.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='admin/css/sidebar.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='admin/css/kpi.css') }}">
 {% endblock %}
 
 {% block navbar %}
@@ -56,7 +58,7 @@
                     {% endif %}
                     {% if current_user %}
                         <div class="nav-item">
-                            {% include "components/theme_switcher.html" %}
+                            {% include "components/common/theme_switcher.html" %}
                         </div>
                         <div class="nav-item dropdown ms-3">
                             <a href="#"
@@ -101,6 +103,7 @@
     {% endif %}
 {% endblock %}
 {% block head_meta %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://api-maps.yandex.ru/v3/?apikey=9811b22a-e004-49b4-ac9a-4103a26f10ee&lang=en_US"></script>
 {% endblock %}
 

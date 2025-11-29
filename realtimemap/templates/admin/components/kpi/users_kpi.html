@@ -1,0 +1,22 @@
+{% from "components/kpi/kpi_card.html" import kpi_card %}
+
+{% macro new_users_kpi_card(data) %}
+    {{ kpi_card(
+          title='New users today',
+          value=data.new_users_today,
+          subtitle='New registrations compared to yesterday',
+          icon='fa-user-plus',
+          color='success',
+          trend_data=data
+      ) }}
+{% endmacro %}
+
+{% macro total_users_kpi_card(data) %}
+    {{ kpi_card(
+          title='Total users',
+          value=data.total_users,
+          subtitle='Total registered users in the system',
+          icon='fa-users',
+          color='info'
+      ) }}
+{% endmacro %}

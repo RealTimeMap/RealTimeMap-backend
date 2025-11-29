@@ -1,0 +1,12 @@
+{% from "components/kpi/kpi_card.html" import kpi_card %}
+
+{% macro activity_kpi_card(data) %}
+    {{ kpi_card(
+          title='Activity in 24 hours',
+          value=data.active_24h,
+          subtitle='Unique users with activity in the last 24 hours',
+          icon='fa-chart-line',
+          color='primary',
+          trend_data=data
+      ) }}
+{% endmacro %}
