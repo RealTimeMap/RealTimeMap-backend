@@ -28,7 +28,7 @@ class BaseKPIWithTrend(BaseModel):
     @computed_field
     @property
     def is_growing(self) -> bool:
-        return self.change > 0
+        return self.change < 0 and self.previous_value == 0
 
     @computed_field
     @property

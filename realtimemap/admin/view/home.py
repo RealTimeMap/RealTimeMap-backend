@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
 
+# TODO переписать datetime на datetime with tz
 class HomeView(CustomView):
     async def render(self, request: Request, templates: Jinja2Templates) -> Response:
         session: "AsyncSession" = request.state.session
