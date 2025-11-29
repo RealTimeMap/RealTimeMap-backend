@@ -32,12 +32,12 @@ def sync_user_metrics():
                 Mark.owner_id.label("user_id"),
                 func.count(Mark.id).label("total_marks"),
                 func.count(Mark.id)
-                .filter(Mark.is_ended == False)
+                .filter(not Mark.is_ended)
                 .label("active_marks"),
-                func.count(Mark.id).filter(Mark.is_ended == True).label("ended_marks"),
+                func.count(Mark.id).filter(Mark.is_ended).label("ended_marks"),
             )
             .join(User, Mark.owner_id == User.id)
-            .where(User.is_active == True)
+            .where(User.is_active )
             .group_by(Mark.owner_id)
         )
 
@@ -45,7 +45,7 @@ def sync_user_metrics():
         print(f"Get mark stat for users: {len(marks_stats)}")
 
         # 2. Получаем список всех активных пользователей
-        all_users_stmt = select(User.id).where(User.is_active == True)
+        all_users_stmt = select(User.id).where(User.is_active)
         all_user_ids = session.execute(all_users_stmt).scalars().all()
         logger.info(f"Total active users: {len(all_user_ids)}")
 
@@ -106,7 +106,7 @@ def sync_active_user_metrics():
             select(User.id)
             .distinct()
             .join(Mark, Mark.owner_id == User.id)
-            .where(and_(User.is_active == True, Mark.created_at >= threshold))
+            .where(and_(User.is_active, Mark.created_at >= threshold))
         )
 
         active_user_ids = session.execute(active_users_stmt).scalars().all()
@@ -128,10 +128,10 @@ def sync_active_user_metrics():
                     Mark.owner_id.label("user_id"),
                     func.count(Mark.id).label("total_marks"),
                     func.count(Mark.id)
-                    .filter(Mark.is_ended == False)
+                    .filter(not Mark.is_ended)
                     .label("active_marks"),
                     func.count(Mark.id)
-                    .filter(Mark.is_ended == True)
+                    .filter(Mark.is_ended)
                     .label("ended_marks"),
                 )
                 .where(Mark.owner_id.in_(batch_ids))

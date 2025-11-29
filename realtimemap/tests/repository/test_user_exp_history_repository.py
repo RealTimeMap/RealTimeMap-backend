@@ -6,12 +6,6 @@ from database.adapter import PgAdapter
 from modules.gamefication.model import UserExpHistory
 from modules.gamefication.repository import PgUserExpHistoryRepository
 from modules.gamefication.schemas import CreateUserExpHistory
-from .fixtures import (
-    test_user,
-    test_exp_action,
-    test_exp_actions,
-    test_subscription_plan,
-)
 
 
 class TestUserExpHistoryRepository:

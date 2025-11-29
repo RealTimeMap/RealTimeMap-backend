@@ -1,15 +1,13 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import select
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.templating import Jinja2Templates
 from starlette_admin import CustomView
 
-from modules import User
 
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import AsyncSession
+    pass
 
 
 class HomeView(CustomView):

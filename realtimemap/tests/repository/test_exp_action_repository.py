@@ -2,7 +2,6 @@ import pytest
 
 from database.adapter import PgAdapter
 from modules.gamefication.repository import PgExpActionRepository
-from .fixtures import test_exp_action, test_exp_actions
 
 
 class TestExpActionRepository:

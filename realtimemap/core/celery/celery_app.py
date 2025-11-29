@@ -10,6 +10,42 @@ app = Celery(
     include=["tasks"],
 )
 
+# Redis connection resilience settings
+app.conf.update(
+    # Broker settings for better Redis connection handling
+    broker_connection_retry=True,
+    broker_connection_retry_on_startup=True,
+    broker_connection_max_retries=10,
+    broker_pool_limit=50,
+
+    # Transport options for Redis
+    broker_transport_options={
+        'visibility_timeout': 3600,
+        'max_connections': 50,
+        'health_check_interval': 30,
+        'retry_on_timeout': True,
+        'socket_connect_timeout': 5,
+        'socket_timeout': 5,
+    },
+
+    # Result backend settings
+    result_backend_transport_options={
+        'retry_on_timeout': True,
+        'max_connections': 50,
+        'health_check_interval': 30,
+        'socket_timeout': 5,
+    },
+
+    # Task execution settings
+    task_acks_late=True,
+    task_reject_on_worker_lost=True,
+    worker_prefetch_multiplier=1,
+
+    # Retry policy
+    task_default_retry_delay=30,
+    task_max_retries=3,
+)
+
 app.conf.beat_schedule = {
     # Переодическая задача для проверки меток
     "end_check": {

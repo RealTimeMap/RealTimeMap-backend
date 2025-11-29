@@ -2,7 +2,6 @@ import pytest
 
 from database.adapter import PgAdapter
 from modules.gamefication.repository import PgLevelRepository
-from .fixtures import test_level, test_levels
 
 
 class TestLevelRepository:
