@@ -37,7 +37,7 @@ def sync_user_metrics():
                 func.count(Mark.id).filter(Mark.is_ended).label("ended_marks"),
             )
             .join(User, Mark.owner_id == User.id)
-            .where(User.is_active )
+            .where(User.is_active)
             .group_by(Mark.owner_id)
         )
 
