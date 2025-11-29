@@ -40,7 +40,7 @@ class Mark(BaseSqlModel, IntIdMixin, TimeMarkMixin):
     )
     additional_info: Mapped[str] = mapped_column(String(256), nullable=True)
 
-    start_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     duration: Mapped[int] = mapped_column(Integer, nullable=False, default=12)
 
     is_ended: Mapped[bool] = mapped_column(
