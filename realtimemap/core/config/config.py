@@ -18,7 +18,7 @@ ROOT_DIR = Path(__file__).parent.parent.parent
 
 class AppConfig(BaseSettings):
     db: DatabaseConfig
-    redis: RedisConfig
+    redis: RedisConfig = RedisConfig()
     celery: CeleryConfig
     server: ServerConfig = ServerConfig()
     socket: SocketIOConfig
