@@ -6,15 +6,8 @@
     border-width: 2px !important;
     border-radius: 10px !important;
     font-weight: 600 !important;
-    transition: color 0.4s ease-out !important;
+    transition: all 0.3s ease !important;
     color: var(--text-primary) !important;
-}
-
-
-.btn .icon,
-.btn span {
-    position: relative;
-    z-index: 2;
 }
 
 .btn::before {
@@ -27,12 +20,30 @@
     transform: translateX(-101%);
     transition: transform 0.4s cubic-bezier(0.7, 0, 0.3, 1);
     z-index: -1;
+    pointer-events: none;
+}
+
+.btn * {
+    position: relative;
+    z-index: 1;
+}
+
+.btn .icon,
+.btn span,
+.btn i,
+.btn svg {
+    position: relative;
+    z-index: 1;
 }
 
 
 .btn:hover {
     color: white !important;
-    z-index: 2;
+}
+
+.btn:hover *,
+.btn:hover > * {
+    color: white !important;
 }
 
 .btn:hover::before {
@@ -40,17 +51,21 @@
 }
 
 .btn.btn-primary {
-    color: var(--text-secondary) !important;
+    color: #ffffff !important;
     border-color: var(--accent-primary) !important;
+    background-color: var(--accent-primary) !important;
 }
 
 .btn.btn-primary::before {
-    background-color: var(--accent-primary);
+    display: none; /* Отключаем эффект заливки для primary */
 }
 
-
 .btn.btn-primary:hover {
-    color: white !important;
+    color: #ffffff !important;
+    background-color: var(--accent-primary-deep) !important;
+    border-color: var(--accent-primary-deep) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--accent-primary-rgb), 0.3);
 }
 
 .btn-secondary {
@@ -62,14 +77,32 @@
     background-color: var(--text-secondary);
 }
 
+.btn-secondary:hover {
+    color: white !important;
+}
+
+.btn-secondary:hover > * {
+    color: white !important;
+}
+
 /* Выпадающие списки кнопки */
 .buttons-collection {
     color: var(--text-secondary) !important;
 }
 
+.buttons-collection:hover,
+.buttons-collection:hover span,
+.buttons-collection:hover .dropdown-toggle {
+    color: white !important;
+}
 
 .dropdown-toggle {
     color: var(--text-secondary) !important;
+}
+
+.dropdown-toggle::after {
+    position: relative;
+    z-index: 2;
 }
 
 .dt-buttons {
@@ -80,28 +113,74 @@
     background-color: var(--bg-card) !important;
 }
 
-.dt-button-collection, .dropdown-menu, span {
+.dt-button-collection span,
+.dropdown-menu span {
     color: var(--text-secondary) !important;
+}
+
+.dropdown-menu .dropdown-item {
+    color: var(--text-secondary) !important;
+}
+
+.dropdown-menu .dropdown-item:hover {
+    color: var(--text-primary) !important;
+    background-color: var(--bg-page) !important;
 }
 
 
 /* Утилитарные кнопки */
 .btn-danger {
-    color: var(--accent-danger) !important;
+    color: #ffffff !important;
     border-color: var(--accent-danger) !important;
+    background-color: var(--accent-danger) !important;
 }
 
 .btn-danger::before {
-    background-color: var(--accent-danger);
+    display: none; /* Отключаем эффект заливки для danger */
+}
+
+.btn-danger:hover {
+    color: #ffffff !important;
+    background-color: #e03028 !important;
+    border-color: #e03028 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
 }
 
 .btn-success {
-    color: var(--accent-succses) !important;
+    color: #1a1d21 !important;
     border-color: var(--accent-succses) !important;
+    background-color: var(--accent-succses) !important;
 }
 
 .btn-success::before {
-    background-color: var(--accent-succses) !important;
+    display: none; /* Отключаем эффект заливки для success */
+}
+
+.btn-success:hover {
+    color: #1a1d21 !important;
+    background-color: #6bc70a !important;
+    border-color: #6bc70a !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(130, 240, 13, 0.3);
+}
+
+/* DataTables buttons specific styles */
+.dt-button {
+    position: relative;
+}
+
+.dt-button:hover,
+.dt-button:hover span,
+.dt-button:hover i,
+.dt-button:hover .dropdown-toggle::after {
+    color: white !important;
+}
+
+/* Ensure dropdown arrow stays visible */
+.btn.dropdown-toggle:hover::after {
+    color: white !important;
+    border-top-color: white !important;
 }
 
 /* пагинация */

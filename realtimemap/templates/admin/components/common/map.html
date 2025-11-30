@@ -1,43 +1,4 @@
 {% macro map_component(geom, obj_id, marker_text) %}
-
-    <style>
-        .map-display {
-            width: 100%;
-            height: 500px;
-        }
-
-        .marker-container {
-            position: relative;
-            display: inline-block;
-        }
-
-        .marker-text {
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            white-space: nowrap;
-            margin-bottom: 5px;
-        }
-
-        .marker-text.hidden {
-            display: none;
-        }
-
-        .marker-text.visible {
-            display: block;
-        }
-
-        .marker-container img {
-            width: 32px;
-            height: 32px;
-        }
-    </style>
-
     <div id="map-{{ obj_id }}"
          class="map-display"
          data-geom="{{ geom }}"
@@ -59,15 +20,26 @@
         });
 
         async function initMap(geomString, objId, markerText, mapElement) {
+            console.log('initMap called with:', {geomString, objId, markerText});
+
             if (!geomString || geomString.indexOf(',') === -1) {
-                mapElement.innerHTML = '<p style="text-align:center; padding-top: 50px;">Invalid coordinates to display map.</p>';
+                mapElement.innerHTML = '<p class="empty-state">Invalid coordinates to display map.</p>';
                 return;
             }
 
-            const coords = geomString.split(', ').map(Number);
-            await ymaps3.ready;
+            // Парсим координаты в формате "longitude, latitude"
+            const coords = geomString.split(',').map(s => s.trim()).map(Number);
+            console.log('Parsed coordinates:', coords);
 
-            const {YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker} = ymaps3;
+            await ymaps3.ready;
+            ymaps3.import.registerCdn(
+                'https://cdn.jsdelivr.net/npm/{package}',
+                '@yandex/ymaps3-default-ui-theme@latest'
+            );
+
+            const {YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer} = ymaps3;
+            const {YMapDefaultMarker} = await ymaps3.import('@yandex/ymaps3-default-ui-theme');
+            console.log('YMapDefaultMarker imported');
 
             const map = new YMap(
                 mapElement,
@@ -82,32 +54,16 @@
             map.addChild(new YMapDefaultSchemeLayer());
             map.addChild(new YMapDefaultFeaturesLayer());
 
-            const createCustomMarker = (coordinates) => {
-                const markerContainer = document.createElement("div");
-                markerContainer.className = "marker-container";
+            // Добавляем маркер на карту используя YMapDefaultMarker
+            const marker = new YMapDefaultMarker({
+                coordinates: coords,
+                title: markerText || 'Marker',
+                color: 'red'
+            });
 
-                const markText = document.createElement("div");
-                markText.className = "marker-text hidden";
-                markText.innerText = markerText;
-
-                const markerImage = document.createElement("img");
-                markerImage.src = "https://cdn-icons-png.flaticon.com/128/684/684908.png";
-                markerImage.className = "image";
-
-                markerContainer.appendChild(markText);
-                markerContainer.appendChild(markerImage);
-
-                markerContainer.onmouseover = () => {
-                    markText.classList.replace('hidden', 'visible');
-                };
-                markerContainer.onmouseout = () => {
-                    markText.classList.replace('visible', 'hidden');
-                };
-
-                return new YMapMarker({coordinates}, markerContainer);
-            }
-
-            map.addChild(createCustomMarker(coords));
+            console.log('Marker created:', marker);
+            map.addChild(marker);
+            console.log('Marker added to map');
         }
     </script>
 {% endmacro %}

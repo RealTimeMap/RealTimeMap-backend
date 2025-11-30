@@ -1,0 +1,147 @@
+/* ==========================================================================
+   Map Component Styles
+   ========================================================================== */
+
+/* --- Map Container --- */
+.map-display {
+    width: 100%;
+    height: 500px;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    transition: box-shadow 0.3s ease;
+}
+
+.map-display:hover {
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+/* --- Marker Container --- */
+.marker-container {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    transform-origin: center bottom;
+    animation: markerBounce 0.6s ease-out;
+}
+
+/* --- Marker Bounce Animation --- */
+@keyframes markerBounce {
+    0% {
+        transform: translateY(-100px) scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(0) scale(1.1);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.marker-container:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
+/* --- Marker Icon --- */
+.marker-container img,
+.marker-container .image {
+    width: 36px;
+    height: 36px;
+    filter: drop-shadow(0 4px 6px var(--shadow-color));
+    transition: filter 0.2s ease;
+}
+
+.marker-container:hover img,
+.marker-container:hover .image {
+    filter: drop-shadow(0 6px 10px var(--shadow-color));
+}
+
+/* --- Marker Tooltip --- */
+.marker-text {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* --- Tooltip Arrow --- */
+.marker-text::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--bg-card);
+}
+
+/* --- Tooltip Visibility States --- */
+.marker-text.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-50%) translateY(-5px);
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+}
+
+.marker-text.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+/* --- Tablets and below --- */
+@media (max-width: 768px) {
+    .map-display {
+        height: 400px;
+        border-radius: 0.375rem;
+    }
+
+    .marker-container img,
+    .marker-container .image {
+        width: 32px;
+        height: 32px;
+    }
+
+    .marker-text {
+        font-size: 13px;
+        padding: 5px 10px;
+    }
+}
+
+/* --- Mobile devices --- */
+@media (max-width: 480px) {
+    .map-display {
+        height: 350px;
+    }
+
+    .marker-container img,
+    .marker-container .image {
+        width: 28px;
+        height: 28px;
+    }
+
+    .marker-text {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+}
