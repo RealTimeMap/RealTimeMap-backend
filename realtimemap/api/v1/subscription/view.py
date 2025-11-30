@@ -1,7 +1,7 @@
 from typing import Annotated, List, TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import ORJSONResponse
 
 from api.v1.auth.fastapi_users import get_current_user_without_ban
 from dependencies.payment import get_yookassa_client
@@ -37,8 +37,42 @@ async def get_subscription_plans(repo: get_sub_repo):
 
 @router.post(
     "/",
-    response_class=RedirectResponse,
-    status_code=307,
+    status_code=200,
+    responses={
+        200: {
+            "description": "Purchase subscription",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {"payment_url": {"type": "string"}},
+                    }
+                }
+            },
+        },
+        400: {
+            "description": "Already have active subscription",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {"detail": {"type": "string"}},
+                    }
+                }
+            },
+        },
+        502: {
+            "description": "Payment service unavailable",
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {"detail": {"type": "string"}},
+                    }
+                }
+            },
+        },
+    },
 )
 async def purchase_subscription(
     data: CreateSubscriptionRequest,
@@ -47,7 +81,7 @@ async def purchase_subscription(
     payment_client: Annotated["YookassaClient", Depends(get_yookassa_client)],
     request: Request,
 ):
-    redirect_url = await service.create_subscription_offer(
+    payment_url = await service.create_subscription_offer(
         data.plan_id, user, payment_client, str(request.url)
     )
-    return RedirectResponse(url=redirect_url)
+    return ORJSONResponse({"payment_url": payment_url})
