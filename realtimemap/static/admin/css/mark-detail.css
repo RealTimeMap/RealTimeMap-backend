@@ -1,0 +1,349 @@
+/* ==========================================================================
+   Mark Detail Page Styles
+   ========================================================================== */
+
+/* --- Main Layout --- */
+.detail-page {
+    padding: 2rem;
+    box-sizing: border-box;
+    max-width: 100%;
+    background-color: var(--bg-page);
+    min-height: 100vh;
+}
+
+/* --- Header Section --- */
+.detail-page__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background: var(--bg-card);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.detail-page__title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.detail-page__title .highlight {
+    color: var(--accent-primary);
+    font-weight: 700;
+}
+
+.detail-page__actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* --- Content Layout --- */
+.detail-page__content {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+.detail-page__main-column {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    min-width: 0; /* Prevents flex item overflow */
+}
+
+.detail-page__sidebar-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    min-width: 320px;
+}
+
+/* --- Photo Grid --- */
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+    padding: 0.5rem 0;
+}
+
+.photo-grid__image {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    border: 1px solid var(--border-color);
+}
+
+.photo-grid__image:hover {
+    transform: scale(1.05) translateY(-4px);
+    box-shadow: 0 8px 16px var(--shadow-color);
+    border-color: var(--accent-primary);
+}
+
+.photo-grid__image:active {
+    transform: scale(0.98);
+}
+
+/* --- Information Rows --- */
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.875rem 0;
+    border-bottom: 1px solid var(--border-color);
+    gap: 1rem;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row strong {
+    color: var(--text-primary);
+    font-weight: 600;
+    flex-shrink: 0;
+    min-width: 120px;
+}
+
+.info-row span,
+.info-row a {
+    text-align: right;
+    word-break: break-word;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.info-row a {
+    text-decoration: none;
+    color: var(--accent-primary);
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.info-row a:hover {
+    color: var(--accent-primary-deep);
+    text-decoration: underline;
+}
+
+/* --- Status Badges --- */
+.status-badge {
+    display: inline-block;
+    padding: 0.4em 0.75em;
+    font-size: 0.85em;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.5rem;
+    color: #ffffff;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px var(--shadow-color);
+}
+
+.status-badge--active {
+    background-color: var(--accent-succses);
+    color: var(--text-secondary) !important;
+}
+
+.status-badge--active:hover {
+    box-shadow: 0 2px 6px rgba(var(--accent-primary-rgb), 0.3);
+    transform: translateY(-1px);
+}
+
+.status-badge--ended {
+    background: var(--text-secondary);
+}
+
+.status-badge--ended:hover {
+    box-shadow: 0 2px 6px var(--shadow-color);
+}
+
+.status-badge--category {
+    /* Background color is set dynamically in the template */
+    font-weight: 700;
+}
+
+.status-badge--category a {
+    color: #ffffff !important;
+    text-decoration: none;
+    display: block;
+}
+
+.status-badge--category:hover {
+    filter: brightness(0.95);
+    transform: translateY(-1px);
+}
+
+/* --- Additional Information Section --- */
+.additional-info {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.additional-info__title {
+    display: block;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.additional-info__text {
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+/* --- Map Marker Styles --- */
+.marker-container .image {
+    width: 32px;
+    height: 32px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* --- Utility Classes --- */
+.monospace {
+    font-family: 'Courier New', Courier, monospace;
+    background: var(--bg-page);
+    padding: 0.2em 0.4em;
+    border-radius: 0.25rem;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+/* --- Large Tablets and Small Desktops (1200px and below) --- */
+@media (max-width: 1200px) {
+    .detail-page__sidebar-column {
+        min-width: 280px;
+    }
+
+    .photo-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+}
+
+/* --- Tablets (1024px and below) --- */
+@media (max-width: 1024px) {
+    .detail-page__content {
+        flex-direction: column;
+    }
+
+    .detail-page {
+        padding: 1rem;
+    }
+
+    .detail-page__sidebar-column {
+        min-width: 100%;
+    }
+
+    .photo-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+/* --- Mobile Landscape and Small Tablets (768px and below) --- */
+@media (max-width: 768px) {
+    .detail-page__header {
+        padding: 1rem;
+    }
+
+    .detail-page__title {
+        font-size: 1.5rem;
+    }
+
+    .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.75rem 0;
+    }
+
+    .info-row strong {
+        min-width: auto;
+    }
+
+    .info-row span,
+    .info-row a {
+        text-align: left;
+    }
+
+    .photo-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+}
+
+/* --- Mobile Portrait (480px and below) --- */
+@media (max-width: 480px) {
+    .detail-page {
+        padding: 0.5rem;
+    }
+
+    .detail-page__header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+    }
+
+    .detail-page__title {
+        font-size: 1.25rem;
+    }
+
+    .detail-page__actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .photo-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .photo-grid__image {
+        height: 120px;
+    }
+
+    .status-badge {
+        font-size: 0.8em;
+        padding: 0.35em 0.65em;
+    }
+}
+
+/* --- Extra Small Mobile (360px and below) --- */
+@media (max-width: 360px) {
+    .detail-page {
+        padding: 0.25rem;
+    }
+
+    .detail-page__header {
+        padding: 0.75rem;
+    }
+
+    .photo-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}

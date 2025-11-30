@@ -13,10 +13,12 @@ from modules.user_subscription.model import PaymentStatus
 from modules.user_subscription.schemas import CreateUserSubscription
 
 if TYPE_CHECKING:
-    from interfaces import IUserSubscriptionRepository
     from modules import User, SubscriptionPlan
     from integrations.payment.yookassa import YookassaClient
-    from core.common.repository import SubscriptionPlanRepository
+    from core.common.repository import (
+        SubscriptionPlanRepository,
+        UserSubscriptionRepository,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,7 @@ logger = logging.getLogger(__name__)
 class SubscriptionService:
     def __init__(
         self,
-        user_subscription_repo: "IUserSubscriptionRepository",
+        user_subscription_repo: "UserSubscriptionRepository",
         subscription_repo: "SubscriptionPlanRepository",
     ):
         self.user_subscription_repo = user_subscription_repo
@@ -44,6 +46,23 @@ class SubscriptionService:
         payment_client: "YookassaClient",
         redirect_url: str,
     ) -> str:
+        """
+
+        Args:
+            plan_id: Id плана платной подписки
+            user: Авторизованный пользователь
+            payment_client: Тип платежного клиента
+            redirect_url: Страница куда пользователь перейдет после оплаты
+
+        Raises:
+            - NotFoundError: Если план не найден
+            - GateWayError: Ошибка со стороны платежного шлюза
+            - HaveActiveSubscriptionError: Если есть действующая подписка
+            - Exception: Неизвестная ошибка
+
+        Returns: Возвращает url строку для оплаты счета
+
+        """
         try:
             # Проверка активной подписки
             await self.check_active_subscription(user.id)
@@ -82,10 +101,10 @@ class SubscriptionService:
                 payment_status=PaymentStatus.waiting_for_capture,
                 is_active=False,
             )
-            # Создаем пустышку для активной подписки пользователя. Если пользователь не оплатит то мы ее позже удалим удалим
+            # Создаем пустышку для активной подписки пользователя. Если пользователь не оплатит, то мы ее позже удалим
             await self.user_subscription_repo.create_user_subscription(create_data)
 
-            # Возвращаем url для переадресацию юзера на оплату
+            # Возвращаем url для переадресации юзера на оплату
             return payment.confirmation["confirmation_url"]
 
         except NotFoundError:

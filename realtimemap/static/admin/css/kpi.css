@@ -19,7 +19,7 @@
     position: relative;
     margin-bottom: 0;
     height: 100%;
-    min-width: 300px;
+    /* min-width: 300px; */ /* Убрано для адаптивности */
 }
 
 .kpi-card:hover {

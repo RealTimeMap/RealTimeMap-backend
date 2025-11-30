@@ -19,6 +19,7 @@ class GeomField(StringField):
     async def parse_obj(self, request: Request, obj: Any) -> str:
         """
         Parses the WKTElement from the database object to be used in the template.
+        Returns coordinates in Yandex Maps format: "longitude, latitude"
         """
         value = getattr(obj, self.name, None)
         if value is None:
@@ -26,25 +27,36 @@ class GeomField(StringField):
         result = serialization_geom(value)
         coords = result.coordinates._asdict()
 
+        # Yandex Maps использует формат [longitude, latitude]
         return f"{coords.get('longitude')}, {coords.get('latitude')}"
 
     @staticmethod
     def _validate_coords(data: str) -> str:
+        """
+        Validates and converts coordinates from "longitude, latitude" format to WKT.
+        Yandex Maps format: "longitude, latitude"
+        """
         try:
-            lat, lon = data.split(", ")
+            # Ожидаем формат: "longitude, latitude"
+            lon, lat = data.split(", ")
 
             lat = float(lat)
             lon = float(lon)
 
+            # Валидация диапазонов
             if lat < -90 or lat > 90:
-                raise ValueError
+                raise ValueError(f"Latitude {lat} out of range [-90, 90]")
 
             if lon < -180 or lon > 180:
-                raise ValueError
+                raise ValueError(f"Longitude {lon} out of range [-180, 180]")
+
+            # PostGIS POINT использует формат: POINT(longitude latitude)
             return f"SRID=4326;POINT({lon} {lat})"
 
-        except Exception:
-            raise
+        except ValueError as e:
+            raise ValueError(f"Invalid coordinates format: {e}")
+        except Exception as e:
+            raise ValueError(f"Failed to parse coordinates: {e}")
 
     async def parse_form_data(
         self, request: Request, form_data: FormData, action: RequestAction

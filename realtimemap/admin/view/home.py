@@ -1,8 +1,10 @@
-from datetime import datetime, timedelta
-from typing import TYPE_CHECKING
+import asyncio
+from datetime import datetime, timedelta, date, timezone
+from functools import lru_cache
+from typing import TYPE_CHECKING, Tuple
 
-from sqlalchemy import select, cast, Date
-from sqlalchemy.sql import func
+from pydantic import BaseModel, computed_field
+from sqlalchemy import select, func
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.templating import Jinja2Templates
@@ -21,19 +23,39 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
 
-# TODO переписать datetime на datetime with tz
+class MonthUserStat(BaseModel):
+    timestamp: date
+    count: int
+
+    @computed_field
+    @property
+    def month(self) -> str:
+        return self.timestamp.month
+
+
 class HomeView(CustomView):
     async def render(self, request: Request, templates: Jinja2Templates) -> Response:
         session: "AsyncSession" = request.state.session
-        active_data = await self._get_active_users_with_change(session)
-        users_kpi = await self._get_users_with_change(session)
-        marks_kpi = await self._get_marks_with_change(session)
-        new_marks_kpi = await self._get_new_marks_kpi(session)
-        content_maker_kpi = await self._get_content_maker_kpi(session)
+
+        active_data, users_kpi, marks_kpi, new_marks_kpi, content_maker_kpi = (
+            await asyncio.gather(
+                self.get_active_users_with_change(session),
+                self.get_users_with_change(session),
+                self.get_marks_with_change(session),
+                self.get_new_marks_kpi(session),
+                self.get_content_maker_kpi(session),
+            )
+        )
+        # users_chart_data = await self.get_users_group(session)
+
         return templates.TemplateResponse(
             "home.html",
             {
                 "request": request,
+                # "users_chart_data": [
+                #     chart_data.model_dump(mode="json")
+                #     for chart_data in users_chart_data
+                # ],
                 "active_kpi": active_data.model_dump(mode="json"),
                 "users_kpi": users_kpi.model_dump(mode="json"),
                 "marks_kpi": marks_kpi.model_dump(mode="json"),
@@ -42,147 +64,186 @@ class HomeView(CustomView):
             },
         )
 
-    async def _get_users_with_change(self, session: "AsyncSession") -> UsersKpi:
-        total_users = await self._get_total_user(session)
-        new_users_today = await self._get_today_register_user(session)
-        new_users_yesterday = await self._get_yesterday_register_user(session)
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def get_dates() -> Tuple[datetime, date, date]:
+        """
+        Возвращает текущее время, сегодняшнюю дату, вчерашнюю дату.
+
+        Все даты рассчитываются в UTC timezone для консистентности.
+
+        Returns:
+            tuple: Кортеж из трех элементов:
+                - now (datetime): Текущее время с timezone UTC
+                - today (date): Сегодняшняя дата
+                - yesterday (date): Вчерашняя дата
+        """
+        now = datetime.now(timezone.utc)
+        today = now.date()
+        yesterday = today - timedelta(days=1)
+        return now, today, yesterday
+
+    async def get_users_with_change(self, session: "AsyncSession") -> UsersKpi:
+        """
+        Получение KPI по пользователям.
+
+        Сравнивает общее количество пользователей, новых пользователей сегодня
+        и новых пользователей вчера.
+
+        Args:
+            session: Асинхронная сессия SQLAlchemy для выполнения запросов
+
+        Returns:
+            UsersKpi: Объект с метриками пользователей
+        """
+        _, today, yesterday = self.get_dates()
+
+        total_users, new_users_today, new_users_yesterday = await asyncio.gather(
+            User.count(session),
+            User.count(session, {"created_at": today}),
+            User.count(session, {"created_at": yesterday}),
+        )
+
         return UsersKpi(
             total_users=total_users,
             new_users_today=new_users_today,
             new_users_yesterday=new_users_yesterday,
         )
 
-    @staticmethod
-    async def _get_total_user(session: "AsyncSession") -> int:
-        stmt = select(func.count(User.id))
-        total_user = await session.scalar(stmt)
-        return total_user
+    async def get_new_marks_kpi(self, session: "AsyncSession") -> NewMarksKpi:
+        """
+        Получение KPI по новым меткам.
 
-    @staticmethod
-    async def _get_today_register_user(session: "AsyncSession") -> int:
-        now = datetime.now()
-        stmt = select(func.count(User.id)).where(
-            cast(User.created_at, Date) == now.date()
+        Сравнивает количество новых меток созданных сегодня, вчера
+        и общее количество всех меток.
+
+        Args:
+            session: Асинхронная сессия SQLAlchemy для выполнения запросов
+
+        Returns:
+            NewMarksKpi: Объект с метриками новых меток
+        """
+        _, today, yesterday = self.get_dates()
+
+        new_marks_today, new_marks_yesterday, total_marks = await asyncio.gather(
+            Mark.count(session, {"created_at": today}),
+            Mark.count(session, {"created_at": yesterday}),
+            Mark.count(session),
         )
-        total_user = await session.execute(stmt)
-        return total_user.scalar()
 
-    @staticmethod
-    async def _get_yesterday_register_user(session: "AsyncSession") -> int:
-        now = datetime.now()
-        yesterday = now.date() - timedelta(days=1)
-        stmt = select(func.count(User.id)).where(
-            cast(User.created_at, Date) == yesterday
-        )
-        total_user = await session.execute(stmt)
-        return total_user.scalar()
-
-    @staticmethod
-    async def _get_today_created_marks(session: "AsyncSession") -> int:
-        """Подсчет меток созданных сегодня"""
-        now = datetime.now()
-        stmt = select(func.count(Mark.id)).where(
-            cast(Mark.created_at, Date) == now.date()
-        )
-        result = await session.execute(stmt)
-        return result.scalar()
-
-    @staticmethod
-    async def _get_yesterday_created_marks(session: "AsyncSession") -> int:
-        """Подсчет меток созданных вчера"""
-        now = datetime.now()
-        yesterday = now.date() - timedelta(days=1)
-        stmt = select(func.count(Mark.id)).where(
-            cast(Mark.created_at, Date) == yesterday
-        )
-        result = await session.execute(stmt)
-        return result.scalar()
-
-    @staticmethod
-    async def _get_total_marks(session: "AsyncSession") -> int:
-        """Подсчет общего количества меток"""
-        stmt = select(func.count(Mark.id))
-        return await session.scalar(stmt)
-
-    async def _get_new_marks_kpi(self, session: "AsyncSession") -> NewMarksKpi:
-        """Получение KPI новых меток"""
-        new_marks_today = await self._get_today_created_marks(session)
-        new_marks_yesterday = await self._get_yesterday_created_marks(session)
-        total_marks = await self._get_total_marks(session)
         return NewMarksKpi(
             new_marks_today=new_marks_today,
             new_marks_yesterday=new_marks_yesterday,
             total_marks=total_marks,
         )
 
-    @staticmethod
-    async def _get_active_users_with_change(session: "AsyncSession") -> ActivityKpi:
+    async def get_active_users_with_change(
+        self, session: "AsyncSession"
+    ) -> ActivityKpi:
         """
-        Количество активных пользователь за 24 часа
-        """
-        now = datetime.now()
-        stmt = select(func.count(UserExpHistory.user_id.distinct())).where(
-            UserExpHistory.created_at >= now - timedelta(hours=24),
-            UserExpHistory.is_revoked == False,
-        )
-        active_24h = await session.scalar(stmt)
+        Получение KPI активности пользователей.
 
-        active_prev_24h_stmt = select(
-            func.count(UserExpHistory.user_id.distinct())
-        ).where(
-            UserExpHistory.created_at >= now - timedelta(hours=48),
-            UserExpHistory.created_at < now - timedelta(hours=24),
-            UserExpHistory.is_revoked == False,
+        Сравнивает количество активных пользователей сегодня
+        с количеством активных пользователей вчера.
+
+        Args:
+            session: Асинхронная сессия SQLAlchemy для выполнения запросов
+
+        Returns:
+            ActivityKpi: Объект с метриками активности пользователей
+        """
+        _, today, yesterday = self.get_dates()
+
+        active_24h, active_prev_24h = await asyncio.gather(
+            UserExpHistory.count(session, {"created_at": today, "is_revoked": False}),
+            UserExpHistory.count(
+                session, {"created_at": yesterday, "is_revoked": False}
+            ),
         )
-        active_prev_24h = await session.scalar(active_prev_24h_stmt)
 
         return ActivityKpi(
             active_24h=active_24h,
             active_prev_24h=active_prev_24h,
         )
 
-    @staticmethod
-    async def _get_marks_with_change(session: "AsyncSession") -> MarksKpi:
-        now = datetime.now()
-        today = now - timedelta(hours=24)
-        active_marks_24h_stmt = select(func.count(Mark.id)).where(
-            cast(Mark.start_at, Date) <= today,
-            not Mark.is_ended,
+    async def get_marks_with_change(self, session: "AsyncSession") -> MarksKpi:
+        """
+        Получение KPI по меткам.
+
+        Возвращает метрики: активные метки сегодня, все активные метки,
+        завершенные метки и общее количество меток.
+
+        Args:
+            session: Асинхронная сессия SQLAlchemy для выполнения запросов
+
+        Returns:
+            MarksKpi: Объект с метриками меток
+        """
+        _, today, yesterday = self.get_dates()
+
+        active_marks_today, active_marks, ended_marks, total_marks = (
+            await asyncio.gather(
+                Mark.count(session, {"created_at": today, "is_ended": False}),
+                Mark.count(session, {"is_ended": False}),
+                Mark.count(session, {"is_ended": True}),
+                Mark.count(session),
+            )
         )
-        active_marks_24h = await session.scalar(active_marks_24h_stmt)
-        active_marks = await Mark.count(session, {"is_ended": False})
-        ended_marks = await Mark.count(session, {"is_ended": True})
-        total_marks = await Mark.count(session)
+
         return MarksKpi(
-            active_marks_24h=active_marks_24h,
+            active_marks_24h=active_marks_today,
             active_marks=active_marks,
             ended_marks=ended_marks,
             total_marks=total_marks,
         )
 
-    @staticmethod
-    async def _get_today_content_makers(session: "AsyncSession") -> int:
-        now = datetime.now()
-        today_content_makers_stmt = select(func.count(Mark.owner_id.distinct())).where(
-            cast(Mark.created_at, Date) == now.date()
-        )
-        today_content_makers = await session.scalar(today_content_makers_stmt)
-        return today_content_makers
+    async def get_content_maker_kpi(self, session: "AsyncSession") -> ContentMakerKpi:
+        """
+        Получение KPI создателей контента.
 
-    @staticmethod
-    async def _get_yesterday_content_makers(session: "AsyncSession") -> int:
-        now = datetime.now()
-        yesterday = now.date() - timedelta(days=1)
-        stmt = select(func.count(Mark.owner_id.distinct())).where(
-            cast(Mark.created_at, Date) == yesterday
-        )
-        yesterday_content_makers = await session.scalar(stmt)
-        return yesterday_content_makers
+        Сравнивает количество уникальных создателей меток сегодня
+        с количеством уникальных создателей вчера.
 
-    async def _get_content_maker_kpi(self, session: "AsyncSession") -> ContentMakerKpi:
-        today_content_maker = await self._get_today_content_makers(session)
-        yesterday_content_maker = await self._get_yesterday_content_makers(session)
+        Args:
+            session: Асинхронная сессия SQLAlchemy для выполнения запросов
+
+        Returns:
+            ContentMakerKpi: Объект с метриками создателей контента
+        """
+        _, today, yesterday = self.get_dates()
+
+        today_content_maker, yesterday_content_maker = await asyncio.gather(
+            Mark.count(
+                session,
+                column=Mark.owner_id,
+                filters={"created_at": today},
+                distinct=True,
+            ),
+            Mark.count(
+                session,
+                column=Mark.owner_id,
+                filters={"created_at": yesterday},
+                distinct=True,
+            ),
+        )
+
         return ContentMakerKpi(
             create_maker_today=today_content_maker,
             create_maker_yesterday=yesterday_content_maker,
         )
+
+    async def get_users_group(self, session: "AsyncSession"):
+        now, today, yesterday = self.get_dates()
+        users_stmt = (
+            select(
+                func.date(User.created_at).label("date"),
+                func.count(User.id).label("count"),
+            )
+            .where(User.created_at >= now - timedelta(days=30))
+            .group_by(func.date(User.created_at))
+            .order_by("date")
+        )
+        result = await session.execute(users_stmt)
+        return [
+            MonthUserStat(timestamp=row.date, count=row.count) for row in result.all()
+        ]

@@ -1,0 +1,324 @@
+/* ==========================================================================
+   KPI Cards - Bootstrap Grid Responsive Enhancements
+   ========================================================================== */
+
+/*
+ * Дополнительные адаптивные стили для Bootstrap Grid
+ * Работает совместно с admin/css/kpi.css
+ *
+ * Responsive Grid Breakpoints (Bootstrap 5):
+ * - Mobile (< 576px): col-12 - 1 column
+ * - Small Tablet (576px - 767px): col-sm-6 - 2 columns
+ * - Tablet (768px - 991px): col-md-4 - 3 columns
+ * - Desktop (992px - 1199px): col-lg-3 - 4 columns
+ * - Large (≥ 1200px): col-xl-3 - 4 columns
+ */
+
+/* Дополнительные улучшения для trend badges */
+.kpi-trend.text-success {
+    background-color: rgba(130, 240, 13, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.kpi-trend.text-danger {
+    background-color: rgba(255, 59, 48, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.kpi-trend.text-warning {
+    background-color: rgba(243, 156, 18, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS - Исправление наложения
+   ========================================================================== */
+
+/* Small Tablets (576px - 767px) - 2 колонки */
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .kpi-card {
+        min-height: 140px;
+    }
+
+    .kpi-card__body {
+        padding: 1.15rem;
+        gap: 0.75rem;
+    }
+
+    .kpi-card__number {
+        font-size: 1.75rem !important;
+    }
+
+    .kpi-card__icon {
+        width: 56px !important;
+        height: 56px !important;
+    }
+
+    .kpi-card__icon i {
+        font-size: 1.5rem !important;
+    }
+
+    .kpi-card__title {
+        font-size: 0.8rem;
+    }
+}
+
+/* Tablets (768px - 991px) - 3 колонки */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .kpi-card {
+        min-height: 150px;
+    }
+
+    .kpi-card__body {
+        padding: 1.15rem;
+        gap: 0.75rem;
+    }
+
+    .kpi-card__number {
+        font-size: 1.65rem !important;
+    }
+
+    .kpi-card__icon {
+        width: 54px !important;
+        height: 54px !important;
+    }
+
+    .kpi-card__icon i {
+        font-size: 1.4rem !important;
+    }
+
+    .kpi-card__title {
+        font-size: 0.75rem;
+        line-height: 1.3;
+    }
+}
+
+/* Desktop (992px - 1199px) - 4 колонки */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    .kpi-card {
+        min-height: 140px;
+    }
+
+    .kpi-card__body {
+        padding: 1.15rem;
+        gap: 0.65rem;
+    }
+
+    .kpi-card__number {
+        font-size: 1.6rem !important;
+    }
+
+    .kpi-card__icon {
+        width: 52px !important;
+        height: 52px !important;
+    }
+
+    .kpi-card__icon i {
+        font-size: 1.3rem !important;
+    }
+
+    .kpi-card__title {
+        font-size: 0.75rem;
+    }
+}
+
+/* Mobile (< 576px) - 1 колонка */
+@media (max-width: 575.98px) {
+    .kpi-card {
+        min-height: 130px;
+    }
+
+    .kpi-card__body {
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+
+    .kpi-card__number {
+        font-size: 1.65rem !important;
+    }
+
+    .kpi-card__icon {
+        width: 50px !important;
+        height: 50px !important;
+    }
+
+    .kpi-card__icon i {
+        font-size: 1.35rem !important;
+    }
+
+    .kpi-card__title {
+        font-size: 0.8rem;
+    }
+}
+
+/* Mobile Phones (< 576px) - 1 column */
+@media (max-width: 575.98px) {
+    .kpi-card__body {
+        padding: 1rem;
+    }
+
+    .kpi-card__number {
+        font-size: 1.75rem;
+    }
+
+    .kpi-card__icon {
+        width: 50px;
+        height: 50px;
+    }
+
+    .kpi-card__icon i {
+        font-size: 1.5rem;
+    }
+
+    .kpi-card__title {
+        font-size: 0.75rem;
+    }
+
+    .kpi-card {
+        min-height: 120px;
+    }
+}
+
+/* Small Tablets (576px - 767px) - 2 columns */
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .kpi-card__body {
+        padding: 1.15rem;
+    }
+
+    .kpi-card__number {
+        font-size: 1.85rem;
+    }
+}
+
+/* Tablets (768px - 991px) - 3 columns */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .kpi-card__body {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .kpi-card__icon {
+        align-self: flex-end;
+        margin-top: auto;
+    }
+
+    .kpi-card__number {
+        font-size: 1.75rem;
+    }
+
+    .kpi-card {
+        min-height: 160px;
+    }
+}
+
+/* Large Screens (992px - 1199px) - 4 columns */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    .kpi-card__body {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem;
+    }
+
+    .kpi-card__icon {
+        align-self: flex-end;
+        margin-top: auto;
+    }
+
+    .kpi-card__number {
+        font-size: 1.65rem;
+    }
+
+    .kpi-card__title {
+        font-size: 0.8rem;
+    }
+}
+
+/* Extra Large Screens (≥ 1200px) - 4 columns */
+@media (min-width: 1200px) {
+    .kpi-card__body {
+        padding: 1.5rem;
+    }
+
+    .kpi-card__number {
+        font-size: 2.25rem;
+    }
+}
+
+/* Ultra Wide Screens (≥ 1400px) - Better spacing */
+@media (min-width: 1400px) {
+    .kpi-card__body {
+        padding: 1.75rem;
+    }
+
+    .kpi-card__icon {
+        width: 70px;
+        height: 70px;
+    }
+
+    .kpi-card__icon i {
+        font-size: 2rem;
+    }
+}
+
+/* ==========================================================================
+   DARK MODE SUPPORT (optional)
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+    .kpi-card {
+        background: #1a1a1a;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .kpi-card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .kpi-card__number {
+        color: #ffffff;
+    }
+
+    .kpi-card__title,
+    .kpi-card__subtitle {
+        color: #b0b0b0;
+    }
+}
+
+/* ==========================================================================
+   PRINT STYLES
+   ========================================================================== */
+@media print {
+    .kpi-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+
+    .kpi-card:hover {
+        transform: none;
+    }
+}
+
+/* ==========================================================================
+   ACCESSIBILITY
+   ========================================================================== */
+
+/* Focus states for keyboard navigation */
+.kpi-card:focus-within {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    .kpi-card {
+        transition: none;
+    }
+
+    .kpi-card:hover {
+        transform: none;
+    }
+}

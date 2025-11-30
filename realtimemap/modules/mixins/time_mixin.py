@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import func
+from sqlalchemy import func, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -9,7 +9,9 @@ class CreateMixin:
     Mixin class to add a `created_at` timestamp column to a SQLAlchemy model.
     """
 
-    created_at: Mapped[datetime] = mapped_column(default=func.now(), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=func.now(), nullable=False
+    )
 
 
 class UpdateMixin:
@@ -19,7 +21,7 @@ class UpdateMixin:
     """
 
     updated_at: Mapped[datetime] = mapped_column(
-        default=func.now(), onupdate=func.now(), nullable=False
+        DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False
     )
 
 
