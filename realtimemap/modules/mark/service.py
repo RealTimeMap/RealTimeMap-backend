@@ -79,7 +79,7 @@ class MarkService:
 
     async def get_mark_by_id(self, mark_id: int) -> Mark:
         result = await self.mark_repo.get_by_id(
-            mark_id, join_related=["owner", "category"]
+            mark_id, join_related=["owner", "category"], load_strategy=joinedload
         )
         if not result:
             raise NotFoundError()
