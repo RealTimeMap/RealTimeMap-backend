@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
 from fastapi import HTTPException
@@ -125,7 +125,7 @@ class MarkService:
         self, mark_id: int, update_data: UpdateMarkRequest, user: User
     ) -> Mark:
         """
-        Метод сервиса для обновление метки
+        Метод сервиса для обновления метки
         :param mark_id: id метки
         :param update_data: Данные для обновления
         :param user: Пользователь кто меняет данные
@@ -140,6 +140,9 @@ class MarkService:
             )
             if not mark:
                 raise NotFoundError()
+
+            if mark.check_ended:
+                raise TimeOutError()
 
             await self._before_update_mark(mark, user, update_data)
             valid_data = self._validate_update_data(update_data)
@@ -177,7 +180,7 @@ class MarkService:
     @staticmethod
     async def _check_mark_ownership(mark: Mark, user: User) -> None:
         """
-        Проверяет является ли пользователь автором данной метки
+        Проверяет являться ли пользователь автором данной метки
         :param mark: Метка для проверки
         :param user: Текщий пользователь
         :return: None
@@ -213,6 +216,6 @@ class MarkService:
         :return: None
         :raises TimeOutError: Если время редактирования вышло
         """
-        passed_time = datetime.now() - mark.created_at
+        passed_time = datetime.now(timezone.utc) - mark.created_at
         if passed_time > timedelta(hours=duration):
             raise TimeOutError()

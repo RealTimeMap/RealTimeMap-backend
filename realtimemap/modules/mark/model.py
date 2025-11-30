@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, List
 
 from geoalchemy2 import Geometry
@@ -54,7 +54,13 @@ class Mark(BaseSqlModel, IntIdMixin, TimeMarkMixin):
 
     @property
     def check_ended(self) -> bool:
-        if datetime.now() > self.end_at:
+        """
+        Checks if the mark has ended by comparing current UTC time with end_at.
+
+        Returns:
+            bool: True if the mark has ended, False otherwise.
+        """
+        if datetime.now(timezone.utc) > self.end_at or self.is_ended:
             return True
         return False
 
@@ -67,6 +73,7 @@ class Mark(BaseSqlModel, IntIdMixin, TimeMarkMixin):
             datetime: The calculated end datetime, which is the start_at datetime plus
                      the duration in hours.
         """
+
         return self.start_at + timedelta(hours=self.duration)
 
     def __str__(self):
