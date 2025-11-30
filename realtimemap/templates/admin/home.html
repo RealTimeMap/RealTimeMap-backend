@@ -22,11 +22,16 @@
 {% endblock %}
 
 {% block content %}
-    {{ activity_kpi_card(active_kpi) }}
-    {{ new_users_kpi_card(users_kpi) }}
-    {{ total_users_kpi_card(users_kpi) }}
-    {{ total_marks_kpi_card(marks_kpi) }}
-    {{ new_marks_kpi_card(new_marks_kpi) }}
-    {{ today_content_maker_kpi_card(content_maker_kpi) }}
-    {{ marks_ratio_kpi_card(marks_kpi) }}
+    <div class="container-fluid">
+        {# KPI Cards Grid - Adaptive Layout #}
+        <div class="row g-3">
+            {{ activity_kpi_card(active_kpi) }}
+            {{ new_users_kpi_card(users_kpi) }}
+            {{ total_users_kpi_card(users_kpi) }}
+            {{ total_marks_kpi_card(marks_kpi) }}
+            {{ new_marks_kpi_card(new_marks_kpi) }}
+            {{ today_content_maker_kpi_card(content_maker_kpi) }}
+            {{ marks_ratio_kpi_card(marks_kpi) }}
+        </div>
+    </div>
 {% endblock content %}
