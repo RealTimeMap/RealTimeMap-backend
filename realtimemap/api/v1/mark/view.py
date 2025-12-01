@@ -61,7 +61,7 @@ async def get_marks(
 @router.get("/create-data", response_model=MarkCreateDataResponse)
 @custom_cache(expire=1800, namespace="marks")
 async def get_dynamic_data_for_mark(
-    request: Request,
+    _: Request,
     service: mark_service,
 ):
     result = await service.get_data_for_create_mark()

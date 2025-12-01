@@ -10,3 +10,4 @@ class RedisConfig(BaseModel):
     socket_keepalive: bool = True
     health_check_interval: int = 30
     decode_responses: bool = False
+    encoding: str = "utf-8"

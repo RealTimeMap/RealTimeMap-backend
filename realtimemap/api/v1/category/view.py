@@ -19,7 +19,7 @@ router = APIRouter(prefix="/category", tags=["Category"])
 async def get_all_sql(
     repo: Annotated["CategoryRepository", Depends(get_pg_category_repository)],
     session: Annotated["AsyncSession", Depends(get_session)],
-    request: Request,
+    _: Request,
     params: Params = Depends(),  # noqa Need for cache builder
 ):
     result = await apaginate(session, repo.get_select_all())
