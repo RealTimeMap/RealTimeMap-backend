@@ -91,7 +91,7 @@ class MarkService:
         categories = await self.category_repo.get_active_categories()
 
         response = MarkCreateDataResponse(
-            categories=categories, allowed_duration=allowed_duration
+            allowed_category=categories, allowed_duration=allowed_duration
         )
 
         return response

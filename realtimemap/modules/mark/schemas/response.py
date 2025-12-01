@@ -6,5 +6,5 @@ from modules.category.schemas import ReadCategory
 
 
 class MarkCreateDataResponse(BaseModel):
-    categories: Optional[List[ReadCategory]] = []
+    allowed_category: Optional[List[ReadCategory]] = []
     allowed_duration: Optional[List[int]] = []
