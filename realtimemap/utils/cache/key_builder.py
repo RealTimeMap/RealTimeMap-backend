@@ -1,6 +1,10 @@
+import hashlib
+import logging
 from typing import Callable, Any, Tuple, Dict
 
 from fastapi import Request, Response
+
+logger = logging.getLogger(__name__)
 
 
 def custom_key_builder(
@@ -12,22 +16,16 @@ def custom_key_builder(
     args: Tuple[Any, ...],
     kwargs: Dict[str, Any],
 ) -> str:
-    kwargs_for_key = kwargs.copy() if kwargs else {}
+    path_key = f"{request.method.lower()}:{request.url.path}"
 
-    if "repo" in kwargs_for_key:
-        del kwargs_for_key["repo"]
+    # Добавляем query параметры
+    if request.query_params:
+        query_string = "&".join(
+            f"{k}={v}" for k, v in sorted(request.query_params.items())
+        )
+        path_key += f"?{query_string}"
 
-    if "service" in kwargs_for_key:
-        del kwargs_for_key["service"]
+    # Хэшируем для краткости
+    key_hash = hashlib.md5(path_key.encode()).hexdigest()[:12]
 
-    if "user" in kwargs_for_key:
-        kwargs_for_key["user_id"] = kwargs_for_key["user"].id
-        del kwargs_for_key["user"]
-
-    cache_key = (
-        namespace
-        + f":{func.__module__}:{func.__name__}"
-        + f":{args}"
-        + f":{sorted(kwargs_for_key.items())}"
-    )
-    return cache_key
+    return f"{namespace}:{request.method.lower()}:{request.url.path.replace('/', ':')}:{key_hash}"

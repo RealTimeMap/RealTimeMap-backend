@@ -28,7 +28,7 @@ class GeomField(StringField):
         coords = result.coordinates._asdict()
 
         # Yandex Maps использует формат [longitude, latitude]
-        return f"{coords.get('longitude')}, {coords.get('latitude')}"
+        return f"{coords.get('latitude')}, {coords.get('longitude')}"
 
     @staticmethod
     def _validate_coords(data: str) -> str:
@@ -38,7 +38,7 @@ class GeomField(StringField):
         """
         try:
             # Ожидаем формат: "longitude, latitude"
-            lon, lat = data.split(", ")
+            lat, lon = data.split(", ")
 
             lat = float(lat)
             lon = float(lon)

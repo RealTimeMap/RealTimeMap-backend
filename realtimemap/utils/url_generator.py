@@ -10,6 +10,13 @@ def generate_full_image_url(
     value: Any,
     info: ValidationInfo,
 ) -> Optional[Union[str, List[str]]]:
+    """
+    Generate full image URLs from File objects or pass through if already URLs.
+
+    This validator handles two cases:
+    1. First validation (from DB): value is File object(s) → generate URLs
+    2. Re-validation (from cache): value is already URL string(s) → pass through
+    """
     if not value:
         return None
 
@@ -19,6 +26,11 @@ def generate_full_image_url(
         if not photo_obj:
             return ""
 
+        # ✅ If already a string URL (from cache), return as-is
+        if isinstance(photo_obj, str):
+            return photo_obj
+
+        # ✅ If File object (from DB), generate URL
         if request:
             return str(
                 request.url_for(
@@ -29,13 +41,13 @@ def generate_full_image_url(
             )
 
         base_url = conf.server.base_url
-
         file_url = photo_obj.path
         return f"{base_url}/media/{file_url}"
 
     if isinstance(value, list):
         return [_generate_url(photo) for photo in value if photo]
 
+    # ✅ Single value: check if string (from cache)
     if isinstance(value, str):
         return value
 

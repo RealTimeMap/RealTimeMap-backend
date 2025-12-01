@@ -10,6 +10,7 @@ __all__ = [
     "ActionType",
     "CreateTestMarkRequest",
     "allowed_duration",
+    "MarkCreateDataResponse",
 ]
 
 
@@ -23,3 +24,4 @@ from .crud import (
 )
 from .params import MarkRequestParams
 from .request import CreateMarkRequest, UpdateMarkRequest, CreateTestMarkRequest
+from .response import MarkCreateDataResponse

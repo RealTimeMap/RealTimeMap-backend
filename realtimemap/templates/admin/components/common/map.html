@@ -27,9 +27,10 @@
                 return;
             }
 
-            // Парсим координаты в формате "longitude, latitude"
-            const coords = geomString.split(',').map(s => s.trim()).map(Number);
-            console.log('Parsed coordinates:', coords);
+            // Парсим координаты в формате "lat, lon" и конвертируем в [lon, lat] для Yandex Maps
+            const coordsParsed = geomString.split(',').map(s => s.trim()).map(Number);
+            const coords = [coordsParsed[1], coordsParsed[0]]; // [lon, lat]
+            console.log('Parsed coordinates (lat, lon):', coordsParsed, '-> (lon, lat):', coords);
 
             await ymaps3.ready;
             ymaps3.import.registerCdn(

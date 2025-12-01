@@ -9,7 +9,6 @@ from fastapi import (
     Request,
     Response,
 )
-from fastapi_cache.decorator import cache
 
 from api.v1.auth.fastapi_users import Annotated, get_current_user_without_ban
 from dependencies.notification import (
@@ -24,10 +23,11 @@ from modules.mark.schemas import (
     DetailMark,
     UpdateMarkRequest,
     ActionType,
+    MarkCreateDataResponse,
 )
-from modules.mark.schemas import allowed_duration
 from modules.mark.service import MarkService
 from modules.notification import MarkNotificationService
+from utils.cache.decorator import custom_cache
 
 if TYPE_CHECKING:
     from modules import User
@@ -56,6 +56,16 @@ async def get_marks(
     return [
         ReadMark.model_validate(mark, context={"request": request}) for mark in result
     ]
+
+
+@router.get("/create-data", response_model=MarkCreateDataResponse)
+@custom_cache(expire=1800, namespace="marks")
+async def get_dynamic_data_for_mark(
+    _: Request,
+    service: mark_service,
+):
+    result = await service.get_data_for_create_mark()
+    return result
 
 
 @router.post(
@@ -157,6 +167,7 @@ async def create_mark_point(
         }
     },
 )
+@custom_cache(expire=1800, namespace="marks")
 async def get_mark(mark_id: int, service: mark_service, request: Request):
     result = await service.get_mark_by_id(mark_id)
     return DetailMark.model_validate(result, context={"request": request})
@@ -276,64 +287,3 @@ async def update_mark(
         request=request,
     )
     return ReadMark.model_validate(result, context={"request": request})
-
-
-@router.get(
-    "/allowed-duration/",
-    response_model=List[int],
-    status_code=200,
-    responses={},
-)
-@cache(7200, namespace="marks")
-async def get_allowed_duration():
-    return allowed_duration
-
-
-#
-# def generate_random_point_in_radius(
-#     center_lat: float, center_lon: float, radius: float
-# ):
-#     # Более точный вариант для небольших радиусов, использующий смещение в метрах # Переводим радиус в метры
-#     distance = random.uniform(0, radius)
-#     angle = random.uniform(0, 2 * math.pi)
-#
-#     delta_x = distance * math.cos(angle)
-#     delta_y = distance * math.sin(angle)
-#
-#     new_lat = center_lat + (delta_y / 111139.0)
-#     new_lon = center_lon + (delta_x / (111139.0 * math.cos(math.radians(center_lat))))
-#
-#     return new_lat, new_lon
-#
-#
-# def generate_random_mark_time_data() -> Tuple[datetime, int]:
-#     duration = random.choice(allowed_duration)
-#     if random.random() < 0.7:
-#         start_at = datetime.now() + timedelta(days=random.randint(-2, 3))
-#     else:
-#         start_at = datetime.now() + timedelta(days=random.randint(5, 7))
-#     return start_at, duration
-#
-#
-# """
-# Задача: Создать тестовые метки в n количестве в радиусе от переданных координат.
-# Для облегчения создания тестовых данных
-#
-# Задачи:
-# 1. Получить ids Польователей и Категорий для рандомной выборки для тестовой метки. ГОТОВО
-# 2. Сделать функцию для генерации даты. 70% активных в настоящее время и 30% для активности в будущем ГОТОВО
-# 3. Функция для генерации рандомных координат в диапазоне пользователя
-# 4. Создать тестовые данные
-# """
-#
-#
-# @router.post("/test/")
-# async def create_test_marks(
-#     data: CreateTestMarkRequest,
-#     service: mark_service,
-#     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-# ):
-#
-#     point = service.geo_service.create_point(data)
-#
-#     return data

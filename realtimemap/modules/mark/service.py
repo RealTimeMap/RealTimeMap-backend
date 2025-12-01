@@ -11,8 +11,8 @@ from errors.http2 import (
     UserPermissionError,
     ValidationError,
 )
-from modules import User
 from modules.geo_service import GeoService
+from modules.user.model import User
 from .filters import MarkFilter
 from .model import Mark
 from .schemas import (
@@ -21,6 +21,8 @@ from .schemas import (
     UpdateMarkRequest,
     CreateMark,
     UpdateMark,
+    MarkCreateDataResponse,
+    allowed_duration,
 )
 
 if TYPE_CHECKING:
@@ -52,23 +54,6 @@ class MarkService:
         self.mark_comment_repo = mark_comment_repo
         self.geo_service = geo_service
 
-    def _validate_create_data(
-        self, data: CreateMarkRequest, user: "User"
-    ) -> CreateMark:
-        geom = None
-        if data.longitude and data.latitude:
-            geom = self.geo_service.create_geometry_point(data)
-        return CreateMark(
-            **data.model_dump(exclude={"latitude", "longitude"}),
-            owner_id=user.id,
-            geom=geom,
-            geohash=(
-                self.geo_service.get_geohash(data)
-                if data.longitude and data.latitude
-                else None
-            ),
-        )
-
     async def create_mark(self, mark_data: CreateMarkRequest, user: User) -> Mark:
         category_exist = await self.category_repo.exist(mark_data.category_id)
         if not category_exist:
@@ -96,30 +81,37 @@ class MarkService:
         result = await self.mark_repo.delete_mark(mark.id)  # noqa: ignore
         return result
 
-    def _validate_update_data(self, update_data: UpdateMarkRequest) -> UpdateMark:
+    async def get_data_for_create_mark(self):
         """
-        метод для преоброзования сырых данных в валидные для обновления метки.
-        Метод автоматически сформирует геометрию и ее geohash, на основе новых координат
-        :param update_data: Сырые данные
-        :return: UpdateMark
-        """
-        try:
-            geom = None
-            geohash = None
-            if update_data.longitude is not None and update_data.latitude is not None:
-                coords = self.geo_service.create_coordinates(update_data)
-                geom = self.geo_service.create_geometry_point(coords)
-                geohash = self.geo_service.get_geohash(coords)
+        Метод возвращает данные необходимые для создания метки
 
-            valid_data = UpdateMark(
-                **update_data.model_dump(exclude={"latitude", "longitude"}),
-                geom=geom,
-                geohash=geohash,
-            )
-            return valid_data
-        except ValueError:
-            logger.info("Update data in not valid: %s", update_data)
-            raise
+        Returns:
+
+        """
+        categories = await self.category_repo.get_active_categories()
+
+        response = MarkCreateDataResponse(
+            allowed_category=categories, allowed_duration=allowed_duration
+        )
+
+        return response
+
+    def _validate_create_data(
+        self, data: CreateMarkRequest, user: "User"
+    ) -> CreateMark:
+        geom = None
+        if data.longitude and data.latitude:
+            geom = self.geo_service.create_geometry_point(data)
+        return CreateMark(
+            **data.model_dump(exclude={"latitude", "longitude"}),
+            owner_id=user.id,
+            geom=geom,
+            geohash=(
+                self.geo_service.get_geohash(data)
+                if data.longitude and data.latitude
+                else None
+            ),
+        )
 
     async def update_mark(
         self, mark_id: int, update_data: UpdateMarkRequest, user: User
@@ -163,6 +155,31 @@ class MarkService:
             logger.error("Update data error: %d %v", mark_id, update_data)
             raise HTTPException(status_code=400, detail="Update data error")
 
+    def _validate_update_data(self, update_data: UpdateMarkRequest) -> UpdateMark:
+        """
+        метод для преоброзования сырых данных в валидные для обновления метки.
+        Метод автоматически сформирует геометрию и ее geohash, на основе новых координат
+        :param update_data: Сырые данные
+        :return: UpdateMark
+        """
+        try:
+            geom = None
+            geohash = None
+            if update_data.longitude is not None and update_data.latitude is not None:
+                coords = self.geo_service.create_coordinates(update_data)
+                geom = self.geo_service.create_geometry_point(coords)
+                geohash = self.geo_service.get_geohash(coords)
+
+            valid_data = UpdateMark(
+                **update_data.model_dump(exclude={"latitude", "longitude"}),
+                geom=geom,
+                geohash=geohash,
+            )
+            return valid_data
+        except ValueError:
+            logger.info("Update data in not valid: %s", update_data)
+            raise
+
     async def _before_update_mark(
         self, mark: Mark, user: User, update_data: UpdateMarkRequest
     ) -> None:
@@ -190,7 +207,7 @@ class MarkService:
 
     async def _check_category_exist(self, update_data: UpdateMarkRequest) -> None:
         """
-        Метод проверяет существует ли указанная категория
+        Метод проверяет, существует ли указанная категория
         :param update_data: Сырые данные
         :return: None
         :raises NotFoundError: Если указанная категория не найдена

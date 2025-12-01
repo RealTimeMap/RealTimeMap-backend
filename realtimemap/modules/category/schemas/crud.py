@@ -16,6 +16,18 @@ class BaseCategory(BaseModel):
 
     @field_validator("color", mode="before")
     def validate_and_convert_color_to_hex(cls, v: Any) -> str:
+        """
+        Convert color to hex format.
+
+        Handles:
+        1. Already hex string (from cache) → pass through
+        2. Color name or other format (from input) → convert to hex
+        """
+        # Already a hex string (from cache)
+        if isinstance(v, str) and v.startswith("#") and len(v) == 7:
+            return v
+
+        # Convert to hex
         try:
             color_obj = Color(v)
             return color_obj.as_hex()
