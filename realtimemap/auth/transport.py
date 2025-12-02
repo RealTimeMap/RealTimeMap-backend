@@ -13,7 +13,9 @@ class OAuthTransport(BearerTransport):
     async def get_login_response(self, token: str) -> RedirectResponse:
         bearer_response = BearerResponse(access_token=token, token_type="bearer")
         return RedirectResponse(
-            url=conf.frontend.get_oauth_url(*bearer_response.model_dump())
+            url=conf.frontend.get_oauth_url(
+                bearer_response.access_token, bearer_response.token_type
+            )
         )
 
 
