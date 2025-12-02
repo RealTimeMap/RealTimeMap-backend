@@ -51,8 +51,6 @@ class AppConfig(BaseSettings):
         return self.root_dir / "static"
 
 
-@lru_cache
-def get_settings() -> AppConfig:
-    return AppConfig()
 
-conf = get_settings()  # type: ignore
+
+conf = AppConfig()  # type: ignore
