@@ -5,7 +5,7 @@ from fastapi_limiter.depends import RateLimiter
 from starlette.responses import Response
 
 from api.v1.auth.fastapi_users import get_current_user_without_ban, get_current_user
-from modules.user.schemas import UserRead, UserUpdate, UserRequestParams
+from modules.user.schemas import UserRead, UserUpdate, UserRequestParams, DetailUserRead
 from modules.user.service import UserService
 from modules.user.service_depenencies import get_user_service
 
@@ -17,7 +17,7 @@ router = APIRouter(tags=["user"])
 
 @router.get(
     "/me",
-    response_model=UserRead,
+    response_model=DetailUserRead,
 )
 # @cache(expire=3600, namespace="user")
 async def me(

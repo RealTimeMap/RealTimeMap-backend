@@ -10,6 +10,7 @@ from .schemas import (
     ReadUserSubscription,
     UserGamefication,
     UserUpdate,
+    DetailUserRead,
 )
 from ..gamefication.schemas.level.crud import LevelRead
 
@@ -44,11 +45,21 @@ class UserService:
         self, user_id: int, request: "Request"
     ) -> Optional[ReadUserSubscription]:
         user_sub = await self.user_subs_repo.get_active_subscription(user_id)
-        return ReadUserSubscription.model_validate(user_sub, context={"request": request}) if user_sub else None
+        return (
+            ReadUserSubscription.model_validate(user_sub, context={"request": request})
+            if user_sub
+            else None
+        )
 
-    async def _load_ban(self, user_id: int, request: "Request") -> Optional[ReadUsersBan]:
+    async def _load_ban(
+        self, user_id: int, request: "Request"
+    ) -> Optional[ReadUsersBan]:
         user_ban = await self.user_ban_repo.get_active_user_ban(user_id)
-        return ReadUsersBan.model_validate(user_ban, context={"request": request}) if user_ban else None
+        return (
+            ReadUsersBan.model_validate(user_ban, context={"request": request})
+            if user_ban
+            else None
+        )
 
     async def _load_gamefication(self, user: "User") -> Optional[UserGamefication]:
         next_level = None
@@ -67,11 +78,13 @@ class UserService:
 
     async def get_included_user_info(
         self, request: "Request", user: "User", params: UserRequestParams
-    ) -> UserRead:
+    ) -> DetailUserRead:
         if not user:
             raise AuthenticationError()
 
-        user_response = UserRead.model_validate(user, context={"request": request})
+        user_response = DetailUserRead.model_validate(
+            user, context={"request": request}
+        )
 
         if not params.include:
             return user_response

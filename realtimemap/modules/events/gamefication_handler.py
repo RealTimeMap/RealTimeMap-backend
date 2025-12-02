@@ -26,7 +26,6 @@ class GameFicationEventHandler:
         async with get_session_context() as session:
             try:
                 service = await get_gamefication_service(session)
-                print(event.event_type)
                 await service.great_user_exp(event.user, event.event_type.value)
             except Exception as e:
                 logger.error(f"Error getting gamefication service: {e}")

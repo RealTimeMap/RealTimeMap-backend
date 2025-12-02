@@ -36,28 +36,6 @@ class CommentReactionType(str, PyEnum):
 logger = logging.getLogger(__name__)
 
 
-class MarkComment(BaseSqlModel, IntIdMixin, TimeMarkMixin):
-    mark_id: Mapped[int] = mapped_column(
-        ForeignKey("marks.id", ondelete="CASCADE"), nullable=False
-    )
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
-    content: Mapped[str] = mapped_column(String(256), nullable=False)
-
-    likes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    dislikes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-
-    user: Mapped["User"] = relationship(
-        "User",
-        foreign_keys=[user_id],
-    )
-    mark: Mapped["Mark"] = relationship(
-        "Mark",
-        foreign_keys=[mark_id],
-    )
-
-
 class Comment(BaseSqlModel, IntIdMixin, TimeMarkMixin):
     content: Mapped[str] = mapped_column(String(256), nullable=False)
 

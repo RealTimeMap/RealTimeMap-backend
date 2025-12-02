@@ -45,8 +45,6 @@ class AdminMark(ModelView):
         Mark.is_ended,
     ]
 
-    fields_default_sort = [("end_at", False)]
-    ordering = ("-id",)
     exclude_fields_from_create = [Mark.is_ended]
     detail_template = "view/mark_detail.html"
 

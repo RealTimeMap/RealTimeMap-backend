@@ -52,7 +52,7 @@ class BaseMark(BaseModel):
     ]
     start_at: Annotated[
         datetime,
-        Field(default=datetime.now(), description="Current date"),
+        Field(default_factory=datetime.now(), description="Current date"),
     ]
     duration: Annotated[int, Field(12, description="Duration in hours.")]
 
