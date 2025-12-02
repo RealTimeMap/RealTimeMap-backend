@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import select, Select
 from sqlalchemy.orm import selectinload
@@ -8,6 +8,7 @@ from core.common.repository import (
     CommentStatRepository,
     CommentReactionRepository,
 )
+from core.common.schemas import PaginationParams, PaginationResults
 from database.adapter import PgAdapter
 from .model import Comment, CommentStat, CommentReaction
 from .schemas import (
@@ -55,10 +56,74 @@ class PgMarkCommentRepository(MarkCommentRepository):
         ).order_by(Comment.created_at.desc())
         return stmt
 
-    async def get_comments(self, mark_id: int) -> List[Comment]:
-        stmt = self._get_comment_for_mark(mark_id=mark_id)
-        comments = await self.adapter.execute_query(stmt, True)
-        return comments
+    async def get_replies(
+        self, comment_id: int, params: PaginationParams
+    ) -> PaginationResults[Comment]:
+        stmt = (
+            select(Comment)
+            .where(Comment.parent_id == comment_id, Comment.is_deleted == False)
+            .options(selectinload(Comment.owner), selectinload(Comment.stats))
+            .order_by(Comment.created_at.desc())
+            .limit(params.limit)
+            .offset(params.offset)
+        )
+
+        replies = await self.adapter.execute_query(stmt)
+        replies_count = await self.adapter.count(
+            {
+                "parent_id": comment_id,
+                "is_deleted": False,
+            },
+        )
+
+        return PaginationResults(replies, replies_count)
+
+    async def get_comments(
+        self, mark_id: int, params: PaginationParams
+    ) -> PaginationResults[Comment]:
+        """
+        Загружает комментарии к метке с первым ответом (если есть).
+        Args:
+            mark_id: ID Метки
+            params: Параметры пагинации
+
+        Returns: Результат с пагинацией
+
+        """
+        stmt = (
+            select(Comment)
+            .where(
+                Comment.mark_id == mark_id,
+                Comment.is_deleted == False,
+                Comment.parent_id.is_(None),
+            )
+            .options(
+                selectinload(Comment.replies.and_(Comment.is_deleted == False)).options(
+                    selectinload(Comment.owner),
+                    selectinload(Comment.stats),
+                ),
+                selectinload(Comment.owner),
+                selectinload(Comment.stats),
+            )
+            .order_by(Comment.created_at.desc())
+            .limit(params.limit)
+            .offset(params.offset)
+        )
+
+        comments = await self.adapter.execute_query(stmt, unique=True)
+
+        # Оставляем только первый reply как превью
+        for comment in comments:
+            if comment.replies:
+                first_reply = min(comment.replies, key=lambda r: r.created_at)
+                comment.replies = [first_reply]
+
+        total_comments = await Comment.count(
+            self.adapter.session,
+            {"mark_id": mark_id, "is_deleted": False},
+        )
+
+        return PaginationResults(comments, total_comments)
 
     async def update_reaction(self):
         pass
