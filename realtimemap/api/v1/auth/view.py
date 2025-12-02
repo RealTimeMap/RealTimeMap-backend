@@ -32,6 +32,7 @@ if conf.api.v1.auth.activate_google_auth:
             google_oauth_client,
             authentication_backend,
             conf.api.v1.auth.verification_token_secret,
+            redirect_url=conf.frontend.url,
         ),
         prefix="/google",
         tags=["Auth"],
