@@ -26,8 +26,8 @@ class AdminComment(BaseModelAdmin):
     async def validate(self, request: Request, data: Dict[str, Any]) -> None:
         errors: Dict[str, str] = dict()
 
-        if data["parent"]:
-            parent_comment: "Comment" = data["parent"]
+        if data.get("parent", None) is not None:
+            parent_comment: "Comment" = data.get("parent")
 
             if parent_comment.parent_id:
                 errors["parent"] = "Nesting limit exceeded. Cannot reply to this reply."
