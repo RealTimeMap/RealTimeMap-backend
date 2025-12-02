@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from core.config import conf
-from dependencies.auth.backend import authentication_backend
+from dependencies.auth.backend import authentication_backend, oauth_backend
 from modules.user.schemas import UserRead, UserCreate
 from .fastapi_users import fastapi_users
 
@@ -30,7 +30,7 @@ if conf.api.v1.auth.activate_google_auth:
     router.include_router(
         fastapi_users.get_oauth_router(
             google_oauth_client,
-            authentication_backend,
+            oauth_backend,
             conf.api.v1.auth.verification_token_secret,
         ),
         prefix="/google",
