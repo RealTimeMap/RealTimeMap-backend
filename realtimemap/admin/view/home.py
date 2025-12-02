@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime, timedelta, date, timezone
 from functools import lru_cache
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Tuple, List
 
 from pydantic import BaseModel, computed_field
 from sqlalchemy import select, func
@@ -260,7 +260,7 @@ class HomeView(CustomView):
         ]
 
     @staticmethod
-    async def get_marks_on_category(session: "AsyncSession"):
+    async def get_marks_on_category(session: "AsyncSession") -> List[MarkCategoryStat]:
         """
         Функция возвращает объект статистики марок по категориям с атрибутами:
         category_name: Уникальное название категории
@@ -283,3 +283,6 @@ class HomeView(CustomView):
         result = await session.execute(mark_stmt)
         rows = result.all()
         return [MarkCategoryStat.model_validate(item) for item in rows]
+
+    # async def get_population_actions(self, session: "AsyncSession"):
+    #     gamefication_stmt = ()
