@@ -1,6 +1,6 @@
+from dataclasses import dataclass
 from datetime import date
 from typing import Any, Dict, TYPE_CHECKING, Optional, Union
-from dataclasses import dataclass
 
 from sqlalchemy import MetaData, select, func, and_, cast, Date, Column
 from sqlalchemy.orm import DeclarativeBase, declared_attr
@@ -17,54 +17,63 @@ if TYPE_CHECKING:
 @dataclass
 class FilterCondition:
     """Базовый класс для условий фильтрации"""
+
     value: Any
 
 
 @dataclass
 class Eq(FilterCondition):
     """Равенство: field == value"""
+
     pass
 
 
 @dataclass
 class Ne(FilterCondition):
     """Неравенство: field != value"""
+
     pass
 
 
 @dataclass
 class Gt(FilterCondition):
     """Больше: field > value"""
+
     pass
 
 
 @dataclass
 class Gte(FilterCondition):
     """Больше или равно: field >= value"""
+
     pass
 
 
 @dataclass
 class Lt(FilterCondition):
     """Меньше: field < value"""
+
     pass
 
 
 @dataclass
 class Lte(FilterCondition):
     """Меньше или равно: field <= value"""
+
     pass
 
 
 @dataclass
 class Between(FilterCondition):
     """Между: field BETWEEN value[0] AND value[1]"""
+
     value: tuple[Any, Any]
 
 
 @dataclass
 class In(FilterCondition):
     """В списке: field IN (value)"""
+
     value: list[Any]
 
 
@@ -84,7 +93,9 @@ class BaseSqlModel(DeclarativeBase):
         return camel_case_to_snake_case(cls.__name__) + "s"
 
     @classmethod
-    def _build_filter_condition(cls, column_attr: Column, filter_value: Union[Any, FilterCondition]):
+    def _build_filter_condition(
+        cls, column_attr: Column, filter_value: Union[Any, FilterCondition]
+    ):
         """
         Построение условия фильтрации на основе типа значения.
 
@@ -209,7 +220,7 @@ class BaseSqlModel(DeclarativeBase):
             cls._validate_filter_fields(filters)
 
         # Определяем колонку для подсчета
-        count_column = column if column is not None else cls.id
+        count_column = column if column is not None else getattr(cls, "id")
 
         # Создаем выражение count с учетом distinct
         if distinct:
