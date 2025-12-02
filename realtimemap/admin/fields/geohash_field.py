@@ -3,6 +3,7 @@ import logging
 from starlette.datastructures import FormData
 from starlette.requests import Request
 from starlette_admin import StringField, RequestAction
+from starlette_admin.helpers import html_params
 
 from utils.geom.geom_sector import get_geohash
 
@@ -20,3 +21,16 @@ class GeoHashField(StringField):
         except Exception as e:
             logger.error(f"Error in geomfield: {e}. {self.class_}")
             return ""
+
+    def input_params(self) -> str:
+        return html_params(
+            {
+                "type": "hidden",
+                "minlength": self.minlength,
+                "maxlength": self.maxlength,
+                "placeholder": self.placeholder,
+                "required": False,
+                "disabled": False,
+                "readonly": False,
+            }
+        )

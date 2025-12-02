@@ -1,4 +1,8 @@
-__all__ = ["GeomField", "JsonField", "ActionTypeField"]
+__all__ = [
+    "GeomField",
+    "JsonField",
+    "ActionTypeField",
+]
 
 
 from .action_type_field import ActionTypeField

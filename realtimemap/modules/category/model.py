@@ -26,5 +26,16 @@ class Category(BaseSqlModel, IntIdMixin):
         return self.category_name
 
     async def __admin_select2_repr__(self, _: Request) -> str:
-        temp = Template("""<span>{{category_name}}</span>""", autoescape=True)
-        return temp.render(category_name=self.category_name)
+        temp = Template(
+            """<div style="display: flex; flex-direction: column; gap: 4px;">
+                <strong>{{category_name}}</strong>
+                <span style="font-size: 0.9em; color: #666;">ID: {{id}}{% if color %} | Color: <span style="display: inline-block; width: 12px; height: 12px; background: {{color}}; border: 1px solid #ccc; border-radius: 2px; vertical-align: middle;"></span> {{color}}{% endif %}{% if not is_active %} | <span style="color: #f44336;">Inactive</span>{% endif %}</span>
+            </div>""",
+            autoescape=True,
+        )
+        return temp.render(
+            category_name=self.category_name,
+            id=self.id,
+            color=self.color,
+            is_active=self.is_active
+        )

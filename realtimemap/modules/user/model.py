@@ -58,6 +58,7 @@ class User(BaseSqlModel, IntIdMixin, SQLAlchemyBaseUserTable[int], TimeMarkMixin
     marks: Mapped["Mark"] = relationship(
         "Mark",
         back_populates="owner",
+        cascade="all, delete-orphan",
     )
     comments: Mapped[List["Comment"]] = relationship(back_populates="owner")
     bans: Mapped[List["UsersBan"]] = relationship(
@@ -94,7 +95,8 @@ class User(BaseSqlModel, IntIdMixin, SQLAlchemyBaseUserTable[int], TimeMarkMixin
         order_by="UserExpHistory.created_at.desc()",
     )
     oauth_accounts: Mapped[List["OAuthAccount"]] = relationship(
-        "OAuthAccount", lazy="joined"
+        "OAuthAccount",
+        lazy="joined",
     )
 
     @classmethod
@@ -108,8 +110,19 @@ class User(BaseSqlModel, IntIdMixin, SQLAlchemyBaseUserTable[int], TimeMarkMixin
         return self.username
 
     async def __admin_select2_repr__(self, _: Request) -> str:
-        temp = Template("""<span>{{email}}</span>""", autoescape=True)
-        return temp.render(email=self.email)
+        temp = Template(
+            """<div style="display: flex; flex-direction: column; gap: 4px;">
+                <strong>{{username}}</strong>
+                <span style="font-size: 0.9em; color: #666;">ID: {{id}} | Email: {{email}} | Level: {{level}}</span>
+            </div>""",
+            autoescape=True,
+        )
+        return temp.render(
+            username=self.username,
+            id=self.id,
+            email=self.email,
+            level=self.level
+        )
 
 
 class AccessToken(BaseSqlModel, SQLAlchemyBaseAccessTokenTable[int]):

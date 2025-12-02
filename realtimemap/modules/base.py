@@ -243,10 +243,26 @@ class BaseSqlModel(DeclarativeBase):
         result = await session.scalar(stmt)
         return result or 0
 
-    async def __admin_repr__(self, _: "Request") -> str:
+    async def __admin_repr__(self, request: "Request") -> str:
+        """
+        Используется для текстового представления в админке
+        Args:
+            request: Класс запроса
+
+        Returns:
+
+        """
         return self.__class__.__name__
 
-    async def __admin_select2_repr__(self, _: "Request") -> str:
+    async def __admin_select2_repr__(self, request: "Request") -> str:
+        """
+        Используется при выборе связи с данным объектом в админке
+        Args:
+            request: Класс запроса
+
+        Returns:
+
+        """
         return self.__class__.__name__
 
 
