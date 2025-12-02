@@ -46,12 +46,15 @@ class UserRead(schemas.BaseUser[int]):
     phone: Optional[str] = None
     username: str
     avatar: Optional[str] = None
-    subscription: Optional["ReadUserSubscription"] = None
-    ban: Optional["ReadUsersBan"] = None
-    gamefication: Optional[UserGamefication] = None
     _validate_avatar = field_validator("avatar", mode="before")(generate_full_image_url)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DetailUserRead(UserRead):
+    subscription: Optional["ReadUserSubscription"] = None
+    ban: Optional["ReadUsersBan"] = None
+    gamefication: Optional[UserGamefication] = None
 
 
 class UserCreate(schemas.BaseUserCreate):
