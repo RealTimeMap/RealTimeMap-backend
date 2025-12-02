@@ -10,7 +10,7 @@ from starlette.responses import Response
 from starlette.templating import Jinja2Templates
 from starlette_admin import CustomView
 
-from modules import User, UserExpHistory, Mark, Category
+from modules import User, UserExpHistory, Mark, Category, ExpAction
 from modules.kpi.schemas import (
     MarksKpi,
     ActivityKpi,
@@ -18,6 +18,7 @@ from modules.kpi.schemas import (
     ContentMakerKpi,
     UsersKpi,
     MarkCategoryStat,
+    PopularActionStat,
 )
 
 if TYPE_CHECKING:
@@ -45,6 +46,7 @@ class HomeView(CustomView):
             new_marks_kpi,
             content_maker_kpi,
             chart_marks_on_category,
+            chart_popular_actions,
         ) = await asyncio.gather(
             self.get_active_users_with_change(session),
             self.get_users_with_change(session),
@@ -52,6 +54,7 @@ class HomeView(CustomView):
             self.get_new_marks_kpi(session),
             self.get_content_maker_kpi(session),
             self.get_marks_on_category(session),
+            self.get_popular_actions(session),
         )
         # users_chart_data = await self.get_users_group(session)
 
@@ -71,6 +74,10 @@ class HomeView(CustomView):
                 "chart_marks_on_category": [
                     chart_mark.model_dump(mode="json")
                     for chart_mark in chart_marks_on_category
+                ],
+                "chart_popular_actions": [
+                    chart_action.model_dump(mode="json")
+                    for chart_action in chart_popular_actions
                 ],
             },
         )
@@ -284,5 +291,30 @@ class HomeView(CustomView):
         rows = result.all()
         return [MarkCategoryStat.model_validate(item) for item in rows]
 
-    # async def get_population_actions(self, session: "AsyncSession"):
-    #     gamefication_stmt = ()
+    @staticmethod
+    async def get_popular_actions(session: "AsyncSession") -> List[PopularActionStat]:
+        """
+        Функция возвращает объект статистики самых популярных действий на сайте, с атрибутами:
+        action_type: Заложенный вид действия
+        total_exp: Общее количество опыта по виду действия
+        total_actions: Общее количество совершенных действий по виду
+        Args:
+            session: Асинхронная сессия SQLAlchemy для выполнения запросов
+
+        Returns:
+            PopularActionStat: Объект со статистикой по популярным действиям
+        """
+        action_stmt = (
+            select(
+                ExpAction.action_type.label("action_type"),
+                func.coalesce(func.sum(UserExpHistory.total_exp), 0).label("total_xp"),
+                func.count(UserExpHistory.id).label("total_actions"),
+            )
+            .join(ExpAction, ExpAction.id == UserExpHistory.action_id)
+            .where(UserExpHistory.is_revoked.is_(False), ExpAction.is_active.is_(True))
+            .group_by(ExpAction.action_type)
+            .order_by(func.sum(UserExpHistory.total_exp).desc())
+        )
+        result = await session.execute(action_stmt)
+        rows = result.all()
+        return [PopularActionStat.model_validate(item) for item in rows]

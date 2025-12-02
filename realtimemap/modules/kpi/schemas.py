@@ -125,3 +125,10 @@ class MarkCategoryStat(BaseModel):
     category_name: str
     total_marks: int
     model_config = ConfigDict(from_attributes=True)
+
+
+class PopularActionStat(BaseModel):
+    action_type: str
+    total_xp: int
+    total_actions: int
+    model_config = ConfigDict(from_attributes=True)
