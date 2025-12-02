@@ -23,6 +23,20 @@
     max-height: 300px;
 }
 
+/* Hide geohash field wrapper completely */
+input[type="hidden"][name="geohash"] {
+    display: none !important;
+}
+
+.form-group:has(input[type="hidden"][name="geohash"]) {
+    display: none !important;
+}
+
+/* Select2 container width fix */
+.select2-container {
+    width: 100% !important;
+    max-width: 100% !important;
+}
 
 .select2-selection {
     background-color: var(--bg-page) !important;
@@ -31,9 +45,37 @@
     border-radius: 6px;
 }
 
+/* Auto-adjust height for multi-line select2 content */
+.select2-selection--single {
+    height: auto !important;
+    min-height: 38px !important;
+}
+
+.select2-selection__rendered {
+    height: auto !important;
+    line-height: normal !important;
+    padding: 8px 12px !important;
+    padding-right: 32px !important; /* Space for arrow */
+    white-space: normal !important;
+    word-wrap: break-word !important;
+}
+
+.select2-selection__arrow {
+    height: 100% !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+}
+
 .select2-results__option, .select2-search {
     background-color: var(--bg-page) !important;
     color: var(--text-primary) !important;
+}
+
+/* Auto-adjust height for options in dropdown */
+.select2-results__option {
+    white-space: normal !important;
+    padding: 8px 12px !important;
+    line-height: normal !important;
 }
 
 input[type="search"] {
@@ -58,6 +100,11 @@ input[type="search"] {
 .select2-container--open .select2-dropdown {
     background-color: var(--bg-page) !important;
     border-color: var(--border-color) !important;
+}
+
+.select2-dropdown {
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 .select2-results__option--selected {

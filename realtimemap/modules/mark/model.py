@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, List
 
 from geoalchemy2 import Geometry
+from jinja2 import Template
 from sqlalchemy import ForeignKey, String, Index, DateTime, Integer, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_file import ImageField
@@ -79,5 +80,20 @@ class Mark(BaseSqlModel, IntIdMixin, TimeMarkMixin):
     def __str__(self):
         return f"{self.mark_name}: {self.id}"
 
-    def __admin_repr__(self, _: "Request") -> str:
+    async def __admin_repr__(self, _: "Request") -> str:
         return f"Mark #{self.id}: {self.mark_name}"
+
+    async def __admin_select2_repr__(self, _: "Request") -> str:
+        temp = Template(
+            """<div style="display: flex; flex-direction: column; gap: 4px;">
+                <strong>{{mark_name}}</strong>
+                <span style="font-size: 0.9em; color: #666;">ID: {{id}} | Category: {{category}} | Owner: {{owner}}</span>
+            </div>""",
+            autoescape=True,
+        )
+        return temp.render(
+            mark_name=self.mark_name,
+            id=self.id,
+            category=self.category.category_name if self.category else "N/A",
+            owner=self.owner.username if self.owner else "N/A",
+        )

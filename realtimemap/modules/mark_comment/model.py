@@ -3,6 +3,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional, List
 
+from jinja2 import Template
 from sqlalchemy import (
     ForeignKey,
     String,
@@ -72,6 +73,26 @@ class Comment(BaseSqlModel, IntIdMixin, TimeMarkMixin):
 
     async def __admin_repr__(self, _: "Request"):
         return f"Comment №{self.id}: {self.content[:25]}"
+
+    async def __admin_select2_repr__(self, _: "Request") -> str:
+        temp = Template(
+            """<div style="display: flex; flex-direction: column; gap: 4px;">
+                <div>
+                    <strong>Comment #{{id}}</strong>
+                    {% if parent_id %}<span style="color: #888; font-size: 0.85em;"> (Reply)</span>{% endif %}
+                </div>
+                <div style="font-size: 0.9em;">{{content}}</div>
+                <span style="font-size: 0.85em; color: #666;">By: {{owner}} | Mark: {{mark}}</span>
+            </div>""",
+            autoescape=True,
+        )
+        return temp.render(
+            id=self.id,
+            content=self.content[:50] + ("..." if len(self.content) > 50 else ""),
+            owner=self.owner.username if self.owner else "N/A",
+            mark=self.mark.mark_name if self.mark else "N/A",
+            parent_id=self.parent_id
+        )
 
 
 class CommentReaction(BaseSqlModel, IntIdMixin, TimeMarkMixin):
