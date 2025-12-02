@@ -119,3 +119,8 @@ class ContentMakerKpi(BaseKPIWithTrend):
         object.__setattr__(self, "current_value", self.create_maker_today)
         object.__setattr__(self, "previous_value", self.create_maker_yesterday)
         return self
+
+class MarkCategoryStat(BaseModel):
+    category_name: str
+    total_marks: int
+    model_config = ConfigDict(from_attributes=True)

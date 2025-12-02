@@ -10,13 +10,14 @@ from starlette.responses import Response
 from starlette.templating import Jinja2Templates
 from starlette_admin import CustomView
 
-from modules import User, UserExpHistory, Mark
+from modules import User, UserExpHistory, Mark, Category
 from modules.kpi.schemas import (
     MarksKpi,
     ActivityKpi,
     NewMarksKpi,
     ContentMakerKpi,
     UsersKpi,
+    MarkCategoryStat,
 )
 
 if TYPE_CHECKING:
@@ -37,14 +38,20 @@ class HomeView(CustomView):
     async def render(self, request: Request, templates: Jinja2Templates) -> Response:
         session: "AsyncSession" = request.state.session
 
-        active_data, users_kpi, marks_kpi, new_marks_kpi, content_maker_kpi = (
-            await asyncio.gather(
-                self.get_active_users_with_change(session),
-                self.get_users_with_change(session),
-                self.get_marks_with_change(session),
-                self.get_new_marks_kpi(session),
-                self.get_content_maker_kpi(session),
-            )
+        (
+            active_data,
+            users_kpi,
+            marks_kpi,
+            new_marks_kpi,
+            content_maker_kpi,
+            chart_marks_on_category,
+        ) = await asyncio.gather(
+            self.get_active_users_with_change(session),
+            self.get_users_with_change(session),
+            self.get_marks_with_change(session),
+            self.get_new_marks_kpi(session),
+            self.get_content_maker_kpi(session),
+            self.get_marks_on_category(session),
         )
         # users_chart_data = await self.get_users_group(session)
 
@@ -61,6 +68,10 @@ class HomeView(CustomView):
                 "marks_kpi": marks_kpi.model_dump(mode="json"),
                 "new_marks_kpi": new_marks_kpi.model_dump(mode="json"),
                 "content_maker_kpi": content_maker_kpi.model_dump(mode="json"),
+                "chart_marks_on_category": [
+                    chart_mark.model_dump(mode="json")
+                    for chart_mark in chart_marks_on_category
+                ],
             },
         )
 
@@ -247,3 +258,28 @@ class HomeView(CustomView):
         return [
             MonthUserStat(timestamp=row.date, count=row.count) for row in result.all()
         ]
+
+    @staticmethod
+    async def get_marks_on_category(session: "AsyncSession"):
+        """
+        Функция возвращает объект статистики марок по категориям с атрибутами:
+        category_name: Уникальное название категории
+        total_marks: Количество меток
+        Args:
+            session: Асинхронная сессия SQLAlchemy для выполнения запросов
+
+        Returns:
+            MarkCategoryStat: Объект с количеством марок по категориям
+        """
+        mark_stmt = (
+            select(
+                Category.category_name.label("category_name"),
+                func.count(Mark.id).label("total_marks"),
+            )
+            .join(Mark, Mark.category_id == Category.id)
+            .group_by(Category.id, Category.category_name)
+            .order_by(func.count(Mark.id).desc())
+        )
+        result = await session.execute(mark_stmt)
+        rows = result.all()
+        return [MarkCategoryStat.model_validate(item) for item in rows]
