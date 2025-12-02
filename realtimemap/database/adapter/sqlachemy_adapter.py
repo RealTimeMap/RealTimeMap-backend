@@ -176,7 +176,7 @@ class SQLAlchemyAdapter(
             await self.session.rollback()
             return None
 
-    async def exist(self, record_id: Any) -> bool:
+    async def exist(self, record_id: Any, id_field: Optional[str] = None) -> bool:
         """
         Check if a record exists in PostgreSQL.
 
@@ -186,9 +186,8 @@ class SQLAlchemyAdapter(
         Returns:
             True if the record exists, False otherwise
         """
-        stmt = select(
-            sql_exists().where(getattr(self.model, self.id_field) == record_id)
-        )
+        field_name = id_field or self.id_field
+        stmt = select(sql_exists().where(getattr(self.model, field_name) == record_id))
         result = await self.session.execute(stmt)
         return result.scalar_one()
 

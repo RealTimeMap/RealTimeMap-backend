@@ -80,11 +80,12 @@ class BaseAdapter(ABC, Generic[Model, CreateSchema, UpdateSchema]):
         raise NotImplementedError
 
     @abstractmethod
-    async def exist(self, record_id: Any) -> bool:
+    async def exist(self, record_id: Any, id_field: Optional[str] = None) -> bool:
         """
         Check if a record exists in the database.
 
         Args:
+            id_field: Field to check
             record_id: ID of the record to check
 
         Returns:
