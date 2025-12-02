@@ -54,7 +54,6 @@ class MarkCommentService:
         """
         if create_data.parent_id:
             parent_comment = await self.comment_repo.get_by_id(create_data.parent_id)
-            print(parent_comment.id)
             if not parent_comment:
                 raise ValidationError(
                     field="parent_id",

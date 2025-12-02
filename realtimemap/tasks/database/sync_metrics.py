@@ -31,9 +31,7 @@ def sync_user_metrics():
             select(
                 Mark.owner_id.label("user_id"),
                 func.count(Mark.id).label("total_marks"),
-                func.count(Mark.id)
-                .filter(not Mark.is_ended)
-                .label("active_marks"),
+                func.count(Mark.id).filter(not Mark.is_ended).label("active_marks"),
                 func.count(Mark.id).filter(Mark.is_ended).label("ended_marks"),
             )
             .join(User, Mark.owner_id == User.id)
@@ -42,7 +40,6 @@ def sync_user_metrics():
         )
 
         marks_stats = session.execute(marks_stats_stmt).all()
-        print(f"Get mark stat for users: {len(marks_stats)}")
 
         # 2. Получаем список всех активных пользователей
         all_users_stmt = select(User.id).where(User.is_active)
@@ -127,12 +124,8 @@ def sync_active_user_metrics():
                 select(
                     Mark.owner_id.label("user_id"),
                     func.count(Mark.id).label("total_marks"),
-                    func.count(Mark.id)
-                    .filter(not Mark.is_ended)
-                    .label("active_marks"),
-                    func.count(Mark.id)
-                    .filter(Mark.is_ended)
-                    .label("ended_marks"),
+                    func.count(Mark.id).filter(not Mark.is_ended).label("active_marks"),
+                    func.count(Mark.id).filter(Mark.is_ended).label("ended_marks"),
                 )
                 .where(Mark.owner_id.in_(batch_ids))
                 .group_by(Mark.owner_id)
