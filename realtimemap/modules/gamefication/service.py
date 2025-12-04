@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
+from modules.gamefication.schemas import LevelCreate
 from modules.user.schemas import UserGameFicationUpdate
 from .model import ExpAction, UserExpHistory
 from .schemas import CreateUserExpHistory
@@ -69,6 +70,15 @@ class GameFicationService:
                 logger.info(f"Exp grant denied: user_id: {user.id} reason: {reason}")
                 return None
 
+            current_level = await self.level_repo.get_level(user.level)
+            next_level_exists = await self.level_repo.exist(user.level + 1, "level")
+            if not next_level_exists:
+                logger.info(f"{user.id} user achieved max level, create new")
+                new_level_data = LevelCreate(
+                    level=current_level.level + 1 if current_level else 1,
+                    required_exp=current_level.required_exp if current_level else None,
+                )
+                await self.level_repo.create(new_level_data)
             exp_calculation = await self._calculate_final_exp(user, action)
             level_before = user.level
             exp_before = user.current_exp

@@ -10,6 +10,7 @@ from modules.gamefication.repository import (
     PgUserExpHistoryRepository,
     PgExpActionRepository,
 )
+from modules.gamefication.schemas import LevelCreate
 from modules.gamefication.service import GameFicationService
 from modules.user.dependencies import get_pg_user_repository
 from modules.user_subscription.dependencies import get_user_subscription_repository
@@ -31,7 +32,7 @@ DBSession = Annotated[AsyncSession, Depends(get_session)]
 async def get_pg_level_repository(
     session: DBSession,
 ) -> "LevelRepository":
-    adapter = PgAdapter[Level, None, None](session, Level)
+    adapter = PgAdapter[Level, LevelCreate, None](session, Level)
     return PgLevelRepository(adapter=adapter)
 
 
