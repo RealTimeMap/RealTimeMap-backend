@@ -66,7 +66,7 @@ services:
         condition: service_started
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "celery --app core.celery.celery_app inspect ping -d celery@$$HOSTNAME"]
+      test: [ "CMD-SHELL", "celery --app core.celery.celery_app inspect ping -d celery@$$HOSTNAME" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -103,6 +103,15 @@ services:
       celery:
         condition: service_started
     restart: unless-stopped
+
+  grpc-service:
+    build: .
+    container_name: grpc-container
+    command: ../.venv/bin/python ./run_grpc.py
+    ports:
+      - "50052:50052"
+    networks:
+      - app-network
 
 networks:
   app-network:

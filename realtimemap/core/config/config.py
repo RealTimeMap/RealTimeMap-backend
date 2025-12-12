@@ -1,4 +1,3 @@
-from functools import lru_cache
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -7,6 +6,7 @@ from .api_prefix import ApiPrefix
 from .celery import CeleryConfig
 from .database import DatabaseConfig
 from .frontend import FrontendConfig
+from .grpc import GRPCConfig
 from .logging import LoggingConfig
 from .payment import YooKassaPayment
 from .redis import RedisConfig
@@ -32,6 +32,7 @@ class AppConfig(BaseSettings):
     log: LoggingConfig = LoggingConfig()
     payment: YooKassaPayment
 
+    grpc: GRPCConfig = GRPCConfig()
     mode: str = "dev"
     
     model_config = SettingsConfigDict(

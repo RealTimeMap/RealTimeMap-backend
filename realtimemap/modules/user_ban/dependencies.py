@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from core.common.repository import UsersBanRepository
 
 
-async def get_user_ban_repository(
+def get_user_ban_repository(
     session: Annotated["AsyncSession", Depends(get_session)],
 ) -> "UsersBanRepository":
     adapter = PgAdapter[UsersBan, UsersBanCreate, UpdateUsersBan](session, UsersBan)

@@ -2,7 +2,6 @@ from typing import Annotated, TYPE_CHECKING
 
 from fastapi import APIRouter, Depends
 
-from api.v1.auth.fastapi_users import get_current_user_without_ban
 from core.common.schemas import PaginationParams, PaginationResponse
 from dependencies.checker import check_mark_exist
 from modules.mark_comment.dependencies import get_mark_comment_service
@@ -14,6 +13,7 @@ from modules.mark_comment.schemas.comment.crud import (
     ReadComment,
     ReadCommentReply,
 )
+from transport.http.api.v1.auth.fastapi_users import get_current_user_without_ban
 from utils.cache.decorator import custom_cache
 
 if TYPE_CHECKING:
