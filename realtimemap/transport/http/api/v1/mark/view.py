@@ -10,7 +10,6 @@ from fastapi import (
     Response,
 )
 
-from api.v1.auth.fastapi_users import Annotated, get_current_user_without_ban
 from dependencies.notification import (
     get_mark_notification_service,
 )
@@ -27,6 +26,10 @@ from modules.mark.schemas import (
 )
 from modules.mark.service import MarkService
 from modules.notification import MarkNotificationService
+from transport.http.api.v1.auth.fastapi_users import (
+    Annotated,
+    get_current_user_without_ban,
+)
 from utils.cache.decorator import custom_cache
 
 if TYPE_CHECKING:

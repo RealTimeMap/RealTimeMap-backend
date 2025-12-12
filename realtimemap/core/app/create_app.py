@@ -12,9 +12,9 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.staticfiles import StaticFiles
 
 from admin import setup_admin
-from api.v1 import router as v1_router
 from core.config import conf
 from middleware import ProcessTimeMiddleware
+from transport.http.api.v1 import router as v1_router
 from .exception_handler import register_exception_handler
 from .lifespan import lifespan
 from .socket import sio_app

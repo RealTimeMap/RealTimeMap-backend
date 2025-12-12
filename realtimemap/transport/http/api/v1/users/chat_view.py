@@ -2,7 +2,6 @@ from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, BackgroundTasks
 
-from api.v1.auth.fastapi_users import get_current_user_without_ban
 from dependencies.checker import check_message_exist, check_chat_exist
 from dependencies.notification import get_chat_notification_service
 from modules import User
@@ -17,6 +16,7 @@ from modules.message.schemas import (
     MessageParamsRequest,
 )
 from modules.notification import ChatNotificationService
+from transport.http.api.v1.auth.fastapi_users import get_current_user_without_ban
 
 router = APIRouter(
     prefix="/chats",

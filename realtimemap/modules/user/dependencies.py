@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 DBSession = Annotated[AsyncSession, Depends(get_session)]
 
 
-async def get_pg_user_repository(
+def get_pg_user_repository(
     session: DBSession,
 ) -> "UserRepository":
     adapter = PgAdapter[User, UserCreate, UserUpdate](session, User)

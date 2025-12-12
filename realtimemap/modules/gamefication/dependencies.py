@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 DBSession = Annotated[AsyncSession, Depends(get_session)]
 
 
-async def get_pg_level_repository(
+def get_pg_level_repository(
     session: DBSession,
 ) -> "LevelRepository":
     adapter = PgAdapter[Level, None, None](session, Level)

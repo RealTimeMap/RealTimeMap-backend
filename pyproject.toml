@@ -37,6 +37,7 @@ dependencies = [
     "black>=25.1.0",
     "yookassa>=3.7.0",
     "redis>=4.6.0",
+    "grpcio-tools>=1.76.0",
 ]
 
 [dependency-groups]

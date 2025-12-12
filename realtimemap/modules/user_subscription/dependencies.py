@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from core.common.repository import UserSubscriptionRepository
 
 
-async def get_user_subscription_repository(
+def get_user_subscription_repository(
     session: Annotated["AsyncSession", Depends(get_session)],
 ) -> "UserSubscriptionRepository":
     adapter = PgAdapter[

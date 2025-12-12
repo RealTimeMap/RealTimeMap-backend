@@ -15,6 +15,7 @@ if TYPE_CHECKING:
         UsersBanRepository,
         UserSubscriptionRepository,
     )
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def get_user_service(
@@ -25,4 +26,14 @@ async def get_user_service(
     ],
     level_repo: Annotated["LevelRepository", Depends(get_pg_level_repository)],
 ) -> "UserService":
+    return UserService(user_repo, user_ban_repo, user_subs_repo, level_repo)
+
+
+# Для gRPC!
+async def create_user_service(session: "AsyncSession") -> "UserService":
+    user_repo = get_pg_user_repository(session)
+    user_ban_repo = get_user_ban_repository(session)
+    user_subs_repo = get_user_subscription_repository(session)
+    level_repo = get_pg_level_repository(session)
+
     return UserService(user_repo, user_ban_repo, user_subs_repo, level_repo)
