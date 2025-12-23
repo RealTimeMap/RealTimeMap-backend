@@ -83,7 +83,7 @@ async def verify_request_token(
     active_ban = await service.is_ban(user.id)
 
     response.headers["X-User-ID"] = str(user.id)
-    response.headers["X-User-Email"] = user.email
+    response.headers["X-User-Name"] = user.username
     response.headers["X-User-Ban"] = "true" if active_ban else "false"
     response.headers["X-User-Admin"] = "true" if user.is_superuser else "false"
     response.status_code = 200
