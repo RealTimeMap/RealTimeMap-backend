@@ -7,6 +7,7 @@ from yookassa import Configuration
 from core.config import conf
 from database.helper import db_helper
 from database.redis.helper import redis_helper
+from integrations.kafka import kafka_producer
 from integrations.payment.yookassa import YookassaClient
 from modules.events.bus import EventType, event_bus
 from modules.events.gamefication_handler import GameFicationEventHandler
@@ -26,6 +27,8 @@ async def lifespan(app: FastAPI):
             "Redis connection failed continue without cache and rate limiter"
         )
 
+    await kafka_producer.start()
+
     app.state.templates = TemplateManager(conf.template_dir)
 
     Configuration.secret_key = conf.payment.secret_key
@@ -41,6 +44,7 @@ async def lifespan(app: FastAPI):
         event_bus.subscribe(event_type, gamefication_handler.handle_exp_event)
 
     yield
+    await kafka_producer.stop()
     await redis_helper.close()
 
     await db_helper.dispose()

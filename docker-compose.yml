@@ -1,47 +1,17 @@
 services:
-  redis:
-    image: redis:latest
-    container_name: redis-service
-    command: >
-      redis-server
-      --bind 0.0.0.0
-      --appendonly yes
-      --appendfsync everysec
-      --tcp-keepalive 60
-      --timeout 0
-      --maxmemory-policy allkeys-lru
-      --save 900 1
-      --save 300 10
-      --save 60 10000
-    ports:
-      - "6379:6379"
-    networks:
-      app-network:
-        aliases:
-          - redis
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    restart: unless-stopped
-
   backend:
     build: .
     container_name: realtime-map-backend
     ports:
-      - "8001:8001"
+      - "8009:8009"
     volumes:
       - uploads_volume:/app/realtimemap/uploads
     command: ../.venv/bin/python run_main.py
     networks:
       - app-network
       - web
-    depends_on:
-      redis:
-        condition: service_healthy
+      - kafka-network
+      - service-network
 
   migrations:
     build: .
@@ -49,9 +19,6 @@ services:
     command: ../.venv/bin/alembic upgrade head
     networks:
       - app-network
-    depends_on:
-      redis:
-        condition: service_healthy
     restart: "no"
 
   celery:
@@ -61,8 +28,6 @@ services:
     networks:
       - app-network
     depends_on:
-      redis:
-        condition: service_healthy
       backend:
         condition: service_started
     restart: unless-stopped
@@ -80,8 +45,6 @@ services:
     networks:
       - app-network
     depends_on:
-      redis:
-        condition: service_healthy
       backend:
         condition: service_started
       celery:
@@ -97,8 +60,6 @@ services:
     networks:
       - app-network
     depends_on:
-      redis:
-        condition: service_healthy
       backend:
         condition: service_started
       celery:
@@ -122,6 +83,10 @@ networks:
         - subnet: 172.28.0.0/16
   web:
     external: true
+  kafka-network:
+    external: true
+  service-network:
+    external: true
+
 volumes:
   uploads_volume:
-  redis_data:

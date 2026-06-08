@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import Request
@@ -14,6 +15,7 @@ from starlette.responses import Response
 
 from auth.base import MyBaseUserDatabase
 from core.config import conf
+from integrations.kafka import kafka_producer
 from modules import User
 from modules.user.schemas import UserCreate
 
@@ -38,6 +40,22 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             user.id,
         )
         welcome_email.delay(user.email, user.username)
+
+        event = {
+            "event_type": "user.registered",
+            "user_id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "phone": user.phone,
+            "is_verified": user.is_verified,
+            "oauth": bool(getattr(user, "oauth_accounts", None)),
+            "registered_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await kafka_producer.send(
+            topic=conf.kafka.user_registered_topic,
+            value=event,
+            key=str(user.id),
+        )
 
     async def authenticate(
         self, credentials: OAuth2PasswordRequestForm

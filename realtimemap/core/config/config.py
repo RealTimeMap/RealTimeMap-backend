@@ -7,6 +7,7 @@ from .celery import CeleryConfig
 from .database import DatabaseConfig
 from .frontend import FrontendConfig
 from .grpc import GRPCConfig
+from .kafka import KafkaConfig
 from .logging import LoggingConfig
 from .payment import YooKassaPayment
 from .redis import RedisConfig
@@ -33,6 +34,7 @@ class AppConfig(BaseSettings):
     payment: YooKassaPayment
 
     grpc: GRPCConfig = GRPCConfig()
+    kafka: KafkaConfig = KafkaConfig()
     mode: str = "dev"
     
     model_config = SettingsConfigDict(
