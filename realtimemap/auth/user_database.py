@@ -4,7 +4,7 @@ from fastapi_users_db_sqlalchemy import (
     SQLAlchemyUserDatabase,
     SQLAlchemyBaseOAuthAccountTable,
 )
-from sqlalchemy import select
+from sqlalchemy import select, func, or_
 
 if TYPE_CHECKING:
     from modules.user.model import User
@@ -19,22 +19,24 @@ class MySQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
     ):
         super().__init__(session, user_table, oauth_account_table)
 
-    async def get_by_phone(self, phone: str):
-        stmt = select(self.user_table).where(self.user_table.phone == phone)
-        return await self._get_user(stmt)
-
     async def get_by_username(self, username: str):
-        stmt = select(self.user_table).where(self.user_table.username == username)
+        stmt = select(self.user_table).where(
+            func.lower(self.user_table.username) == username.strip().lower()
+        )
         return await self._get_user(stmt)
 
     async def validate_user_credentials(self, username: str, email: str):
         stmt = select(self.user_table).where(
-            # (self.user_table.phone == phone)
-            (self.user_table.username == username)
-            | (self.user_table.email == email),
+            or_(
+                func.lower(self.user_table.username) == username.strip().lower(),
+                func.lower(self.user_table.email) == email.strip().lower(),
+            )
         )
         return await self._get_user(stmt)
 
+    async def get_by_phone(self, phone: str):
+        stmt = select(self.user_table).where(self.user_table.phone == phone)
+        return await self._get_user(stmt)
+
     async def create(self, create_dict: dict[str, Any]) -> "User":
-        # TODO мб переписать генерацию тут
         return await super().create(create_dict)

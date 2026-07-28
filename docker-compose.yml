@@ -7,6 +7,8 @@ services:
     volumes:
       - uploads_volume:/app/realtimemap/uploads
     command: ../.venv/bin/python run_main.py
+    environment:
+      APP_CONFIG__KAFKA__BOOTSTRAP_SERVERS: kafka:9092
     networks:
       - app-network
       - web

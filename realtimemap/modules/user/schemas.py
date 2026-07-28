@@ -10,6 +10,8 @@ from modules.user_ban.schemas import ReadUsersBan
 from modules.user_subscription.schemas import ReadUserSubscription
 from utils.url_generator import generate_full_image_url
 
+def normalize(value: str) -> str:
+    return value.lower().strip()
 
 class UserGamefication(BaseModel):
     current_level: Annotated[int, Field(..., description="Current user level")]

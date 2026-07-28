@@ -169,7 +169,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         await self.validate_password(user_create.password, user_create)
 
         existing_user = await self.user_db.validate_user_credentials(
-            email=user_create.email, username=user_create.username
+            email=user_create.email.lower(), username=user_create.username.lower()
         )
 
         if existing_user is not None:
