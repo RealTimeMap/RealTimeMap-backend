@@ -1,10 +1,11 @@
-from typing import Annotated, TYPE_CHECKING
+from typing import Annotated, Optional, TYPE_CHECKING
 
 from fastapi import APIRouter, Response
 from fastapi.params import Depends
 
 from core.config import conf
 from dependencies.auth.backend import authentication_backend, oauth_backend
+from dependencies.auth.optional import get_current_user_optional
 from errors.http2 import AuthenticationError
 from modules.user.schemas import UserRead, UserCreate
 from modules.user.service_depenencies import get_user_service
@@ -61,7 +62,6 @@ router.include_router(
 @router.get("/token-validate")
 async def verify_request_token(
     user: Annotated["User", Depends(get_current_user)],
-    service: Annotated["UserService", Depends(get_user_service)],
     response: Response,
 ):
     """
@@ -80,12 +80,44 @@ async def verify_request_token(
     if not user:
         raise AuthenticationError()
 
-    active_ban = await service.is_ban(user.id)
 
     response.headers["X-User-ID"] = str(user.id)
     response.headers["X-User-Name"] = user.username
-    response.headers["X-User-Ban"] = "true" if active_ban else "false"
     response.headers["X-User-Admin"] = "true" if user.is_superuser else "false"
     response.status_code = 200
+
+    return
+
+@router.get("/token-validate-optional")
+async def verify_request_token_optional(
+    user: Annotated[Optional["User"], Depends(get_current_user_optional)],
+    response: Response,
+):
+    """
+    Эндпоинт для аутентификации микросервисов на маршрутах,
+    где авторизация необязательна.
+
+    В отличие от verify_request_token всегда отвечает 200:
+    отсутствие или невалидность токена не ошибка, а анонимный запрос.
+    Gateway ориентируется на заголовок X-User-Anonymous.
+    Args:
+        service: Зависимость для пользовательского сервиса
+        user: Зависимость на опциональное получение пользователя
+        response: ответ
+
+    Returns: ORJSONResponse
+
+    """
+
+    response.status_code = 200
+
+    if not user:
+        response.headers["X-User-Anonymous"] = "true"
+        return
+
+    response.headers["X-User-Anonymous"] = "false"
+    response.headers["X-User-ID"] = str(user.id)
+    response.headers["X-User-Name"] = user.username
+    response.headers["X-User-Admin"] = "true" if user.is_superuser else "false"
 
     return
