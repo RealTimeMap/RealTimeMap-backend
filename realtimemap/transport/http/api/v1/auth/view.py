@@ -91,6 +91,7 @@ async def verify_request_token(
     response.headers["X-User-Ban"] = "true" if is_banned else "false"
     response.headers["X-User-Ban-Reason"] = "Использование уязвимостей приложения в свое благо" if is_banned else ""
     response.headers["X-User-Ban-Detail"] = "Нарушение правил платформы" if is_banned else ""
+    response.headers["X-User-Ban-Time"] = "Бессрочно" if is_banned else ""
     response.status_code = 200
 
     return
@@ -134,4 +135,5 @@ async def verify_request_token_optional(
     response.headers["X-User-Ban"] = "true" if is_banned else "false"
     response.headers["X-User-Ban-Reason"] = "Использование уязвимостей приложения в свое благо" if is_banned else ""
     response.headers["X-User-Ban-Detail"] = "Нарушение правил платформы" if is_banned else ""
+    response.headers["X-User-Ban-Time"] = "Бессрочно" if is_banned else ""
     return
