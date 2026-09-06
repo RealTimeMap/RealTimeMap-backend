@@ -98,7 +98,7 @@ class AdminUser(BaseModelAdmin):
 
         # Ban Checking
         session: AsyncSession = request.state.session
-        user_ban_repo = await get_user_ban_repository(session)
+        user_ban_repo = get_user_ban_repository(session)
         is_banned = await user_ban_repo.check_active_user_ban(pk)
         if is_banned:
             raise ActionFailed("User already banned")
@@ -148,7 +148,7 @@ class AdminUser(BaseModelAdmin):
         moderator = self.get_current_user(request)
         session: AsyncSession = request.state.session
         current_time = datetime.now()
-        user_ban_repo = await get_user_ban_repository(session)
+        user_ban_repo = get_user_ban_repository(session)
 
         is_banned = await user_ban_repo.check_active_user_ban(user_id)
 

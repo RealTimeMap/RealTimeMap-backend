@@ -72,9 +72,9 @@ async def get_game_fication_service(
 async def get_gamefication_service(session: DBSession) -> "GameFicationService":
     history_repo = await get_pg_user_exp_history_repository(session)
     action_repo = await get_pg_exp_action_repository(session)
-    level_repo = await get_pg_level_repository(session)
-    user_repo = await get_pg_user_repository(session)
-    user_subs_repo = await get_user_subscription_repository(session)
+    level_repo = get_pg_level_repository(session)
+    user_repo = get_pg_user_repository(session)
+    user_subs_repo = get_user_subscription_repository(session)
     return GameFicationService(
         history_repo, action_repo, level_repo, user_repo, user_subs_repo
     )

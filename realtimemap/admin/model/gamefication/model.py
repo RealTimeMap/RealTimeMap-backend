@@ -23,7 +23,7 @@ class AdminLevel(ModelView):
     async def validate(self, request: Request, data: Dict[str, Any]) -> None:
         errors: Dict[str, str] = dict()
         session: "AsyncSession" = request.state.session
-        level_repository = await get_pg_level_repository(session)
+        level_repository = get_pg_level_repository(session)
         max_level = await level_repository.get_max_level()
         if max_level is not None and max_level.level + 1 != data["level"]:
             errors["level"] = "Уровень не может превышать предыдущий больше чем +1"
