@@ -51,11 +51,13 @@ class AdminAuthProvider(AuthProvider):
         raise LoginFailed("login failed")
 
     async def is_authenticated(self, request) -> bool:
+        username = request.session.get("username")
+        if not username:
+            return False
+
         async with db_helper.session_factory() as session:
             async with get_users_db_context(session=session) as users_db:
-                user = await users_db.get_by_username(
-                    request.session.get("username", None)
-                )
+                user = await users_db.get_by_username(username)
                 if user and user.is_superuser:
                     request.state.user = user
                     return True

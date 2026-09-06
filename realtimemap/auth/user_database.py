@@ -19,7 +19,9 @@ class MySQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
     ):
         super().__init__(session, user_table, oauth_account_table)
 
-    async def get_by_username(self, username: str):
+    async def get_by_username(self, username: Optional[str]):
+        if not username:
+            return None
         stmt = select(self.user_table).where(
             func.lower(self.user_table.username) == username.strip().lower()
         )
