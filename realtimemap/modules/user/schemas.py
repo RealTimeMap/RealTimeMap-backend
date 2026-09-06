@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Optional, List, Annotated
 
+import re
 from fastapi import UploadFile
 from fastapi_users import schemas
 from pydantic import BaseModel, field_validator, Field, ConfigDict, computed_field
@@ -61,6 +62,15 @@ class DetailUserRead(UserRead):
 
 class UserCreate(schemas.BaseUserCreate):
     username: Annotated[str, Field(..., description="Username")]
+
+    @field_validator("username")
+    def validate_username(cls, value: str) -> str:
+        if not re.match(r'^[A-Za-z]+$', value):
+            raise ValueError(
+                "The login must contain only Latin letters. "
+                "Cyrillic, digits, and special characters are not allowed."
+            )
+        return value
 
     @field_validator("password")
     def validate_password(cls, value: str):
