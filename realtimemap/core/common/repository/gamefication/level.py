@@ -3,9 +3,10 @@ from typing import Optional, List
 
 from core.common.repository import BaseRepository
 from modules.gamefication.model import Level
+from modules.gamefication.schemas import LevelCreate
 
 
-class LevelRepository(BaseRepository[Level, None, None], ABC):
+class LevelRepository(BaseRepository[Level, LevelCreate, None], ABC):
 
     @abstractmethod
     async def get_next_level(self, current_level: int) -> Optional[Level]:

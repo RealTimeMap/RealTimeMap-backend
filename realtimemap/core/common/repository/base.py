@@ -38,5 +38,5 @@ class BaseRepository(IBaseRepository[Model, CreateSchema, UpdateSchema]):
     ) -> Optional[Model]:
         return await self.adapter.get_by_id(item_id, join_related, load_strategy)
 
-    async def exist(self, record_id: Any) -> bool:
-        return await self.adapter.exist(record_id)
+    async def exist(self, record_id: Any, id_field: Optional[str] = None) -> bool:
+        return await self.adapter.exist(record_id, id_field)
