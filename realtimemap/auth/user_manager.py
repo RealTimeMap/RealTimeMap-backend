@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import Request
@@ -15,7 +14,13 @@ from starlette.responses import Response
 
 from auth.base import MyBaseUserDatabase
 from core.config import conf
-from integrations.kafka import kafka_producer
+from integrations.kafka import (
+    USER_REGISTERED,
+    kafka_producer,
+    make_envelope,
+    make_headers,
+    user_registered_payload,
+)
 from modules import User
 from modules.user.schemas import UserCreate
 
@@ -41,20 +46,21 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         )
         welcome_email.delay(user.email, user.username)
 
-        event = {
-            "event_type": "user.registered",
-            "user_id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "phone": user.phone,
-            "is_verified": user.is_verified,
-            "oauth": bool(getattr(user, "oauth_accounts", None)),
-            "registered_at": datetime.now(timezone.utc).isoformat(),
-        }
+        payload = user_registered_payload(
+            user_id=user.id,
+            username=user.username,
+            email=user.email,
+            phone=user.phone,
+            is_verified=user.is_verified,
+            oauth=bool(getattr(user, "oauth_accounts", None)),
+        )
+        # Ключ — user_id: события одного пользователя попадают в одну партицию
+        # и обрабатываются по порядку.
         await kafka_producer.send(
-            topic=conf.kafka.user_registered_topic,
-            value=event,
+            topic=conf.kafka.user_events_topic,
+            value=make_envelope(USER_REGISTERED, payload),
             key=str(user.id),
+            headers=make_headers(USER_REGISTERED, user_id=user.id, source_id=user.id),
         )
 
     async def authenticate(

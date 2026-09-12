@@ -53,12 +53,23 @@ class KafkaProducerClient:
         topic: str,
         value: dict[str, Any],
         key: Optional[str] = None,
+        headers: Optional[list[tuple[str, bytes]]] = None,
     ) -> None:
+        """Публикует событие.
+
+        Сбой отправки логируется, но не поднимается наверх: вызывающий код
+        (регистрация пользователя) уже применил своё изменение в БД, и падать
+        из-за недоступной шины ему нельзя. Цена — потеря события при отказе
+        брокера; починится выносом публикации в outbox, когда это станет
+        критично.
+        """
         if self._producer is None:
             logger.debug("Kafka producer not initialized, skip event topic=%s", topic)
             return
         try:
-            await self._producer.send_and_wait(topic, value=value, key=key)
+            await self._producer.send_and_wait(
+                topic, value=value, key=key, headers=headers
+            )
         except KafkaError as e:
             logger.error(
                 "Failed to publish kafka event topic=%s key=%s err=%s",
