@@ -15,11 +15,19 @@ from starlette.responses import Response
 from auth.base import MyBaseUserDatabase
 from core.config import conf
 from integrations.kafka import (
+    USER_LOGGED_IN,
+    USER_PASSWORD_CHANGED,
+    USER_PASSWORD_FORGOTTEN,
     USER_REGISTERED,
+    USER_VERIFY_REQUESTED,
     kafka_producer,
+    logged_in_payload,
     make_envelope,
     make_headers,
+    password_changed_payload,
+    password_forgotten_payload,
     user_registered_payload,
+    verify_requested_payload,
 )
 from modules import User
 from modules.user.schemas import UserCreate
@@ -33,18 +41,42 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     # noinspection PyTypeHints
     user_db = MyBaseUserDatabase[UP, ID]
 
+    async def _publish(self, event_type: str, user: User, payload: dict) -> None:
+        """Публикует событие пользователя в общий топик.
+
+        Ключ — user_id: события одного пользователя попадают в одну партицию и
+        обрабатываются по порядку.
+        """
+        await kafka_producer.send(
+            topic=conf.kafka.user_events_topic,
+            value=make_envelope(event_type, payload),
+            key=str(user.id),
+            headers=make_headers(event_type, user_id=user.id, source_id=user.id),
+        )
+
+    @staticmethod
+    def _request_context(request: Optional[Request]) -> tuple[str, str]:
+        """Достаёт устройство и адрес из запроса.
+
+        Пустые строки, а не "Unknown": подстановку понятного текста делает
+        письмо, и решать это на стороне шаблона правильнее — он знает, как
+        выглядит строка для читателя.
+        """
+        if request is None:
+            return "", ""
+        device = request.headers.get("User-Agent") or ""
+        ip = request.client.host if request.client else ""
+        return device, ip
+
     async def on_after_register(
         self,
         user: User,
         request: Optional["Request"] = None,
     ):
-        from tasks import welcome_email
-
         log.warning(
             "User %r has registered.",
             user.id,
         )
-        welcome_email.delay(user.email, user.username)
 
         payload = user_registered_payload(
             user_id=user.id,
@@ -102,14 +134,21 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         token: str,
         request: Optional["Request"] = None,
     ):
-        from tasks import verify_email
-
         log.warning(
             "Verification requested for user %r.",
             user.id,
         )
         verify_url = conf.frontend.get_verify_url(token)
-        verify_email.delay(user.email, user.username, verify_url)
+        await self._publish(
+            USER_VERIFY_REQUESTED,
+            user,
+            verify_requested_payload(
+                user_id=user.id,
+                username=user.username,
+                email=user.email,
+                verify_url=verify_url,
+            ),
+        )
 
     async def on_after_forgot_password(
         self,
@@ -117,22 +156,41 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         token: str,
         request: Optional["Request"] = None,
     ):
-        from tasks import forgot_password_email
-
         log.warning(
             "User %r has forgot their password.",
             user.id,
         )
         forgot_password_url = conf.frontend.get_password_reset_url(token)
-        forgot_password_email.delay(user.email, user.username, forgot_password_url)
+        device, ip_address = self._request_context(request)
+        await self._publish(
+            USER_PASSWORD_FORGOTTEN,
+            user,
+            password_forgotten_payload(
+                user_id=user.id,
+                username=user.username,
+                email=user.email,
+                reset_url=forgot_password_url,
+                device=device,
+                ip_address=ip_address,
+            ),
+        )
 
     async def on_after_reset_password(
         self, user: User, request: Optional[Request] = None
     ) -> None:
-        from tasks import change_password_email
-
-        ip_address = request.client.host if request else "Unknown"
-        change_password_email.delay(user.email, user.username, ip_address)
+        log.info("User %r has changed their password", user.id)
+        device, ip_address = self._request_context(request)
+        await self._publish(
+            USER_PASSWORD_CHANGED,
+            user,
+            password_changed_payload(
+                user_id=user.id,
+                username=user.username,
+                email=user.email,
+                device=device,
+                ip_address=ip_address,
+            ),
+        )
 
     async def on_after_login(
         self,
@@ -140,17 +198,18 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         request: Optional[Request] = None,
         response: Optional[Response] = None,
     ) -> None:
-        from tasks import login_email
-
         log.info("User %r logged in", user.id)
-        user_agent = request.headers.get("User-Agent") if request else "Unknown"
-        ip_address = request.client.host if request else "Unknown"
-
-        login_email.delay(
-            user.email,
-            user.username,
-            ip_address,
-            user_agent,
+        device, ip_address = self._request_context(request)
+        await self._publish(
+            USER_LOGGED_IN,
+            user,
+            logged_in_payload(
+                user_id=user.id,
+                username=user.username,
+                email=user.email,
+                device=device,
+                ip_address=ip_address,
+            ),
         )
 
     async def create(

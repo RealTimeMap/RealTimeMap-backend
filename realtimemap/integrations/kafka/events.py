@@ -23,6 +23,17 @@ USER_REGISTERED = "user.registered"
 USER_UPDATED = "user.updated"
 USER_DELETED = "user.deleted"
 
+# События, по которым smtp-service отправляет письма аккаунта.
+#
+# Ссылки и токены кладутся в payload: подписаны они секретом этого сервиса, и
+# восстановить их на стороне smtp-service нельзя. Адрес получателя тоже едет в
+# событии — письмо о смене пароля или входе должно уйти даже когда gRPC
+# UserService недоступен.
+USER_VERIFY_REQUESTED = "user.verify_requested"
+USER_PASSWORD_FORGOTTEN = "user.password_forgotten"
+USER_PASSWORD_CHANGED = "user.password_changed"
+USER_LOGGED_IN = "user.logged_in"
+
 
 def make_envelope(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
     """Собирает конверт события.
@@ -80,4 +91,83 @@ def user_registered_payload(
         "is_verified": is_verified,
         "oauth": oauth,
         "registered_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def verify_requested_payload(
+    user_id: int,
+    username: str,
+    email: str,
+    verify_url: str,
+    code: str = "",
+    ttl_minutes: int = 30,
+) -> dict[str, Any]:
+    """Payload запроса подтверждения адреса."""
+    return {
+        "user_id": user_id,
+        "username": username,
+        "email": email,
+        "verify_url": verify_url,
+        "code": code,
+        "ttl_minutes": ttl_minutes,
+    }
+
+
+def password_forgotten_payload(
+    user_id: int,
+    username: str,
+    email: str,
+    reset_url: str,
+    ttl_minutes: int = 60,
+    device: Optional[str] = None,
+    ip_address: Optional[str] = None,
+) -> dict[str, Any]:
+    """Payload запроса на сброс пароля."""
+    return {
+        "user_id": user_id,
+        "username": username,
+        "email": email,
+        "reset_url": reset_url,
+        "ttl_minutes": ttl_minutes,
+        "requested_at": datetime.now(timezone.utc).isoformat(),
+        "device": device or "",
+        "ip_address": ip_address or "",
+    }
+
+
+def password_changed_payload(
+    user_id: int,
+    username: str,
+    email: str,
+    device: Optional[str] = None,
+    ip_address: Optional[str] = None,
+) -> dict[str, Any]:
+    """Payload уже состоявшейся смены пароля."""
+    return {
+        "user_id": user_id,
+        "username": username,
+        "email": email,
+        "changed_at": datetime.now(timezone.utc).isoformat(),
+        "device": device or "",
+        "ip_address": ip_address or "",
+    }
+
+
+def logged_in_payload(
+    user_id: int,
+    username: str,
+    email: str,
+    device: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    location: Optional[str] = None,
+) -> dict[str, Any]:
+    """Payload входа в аккаунт."""
+    return {
+        "user_id": user_id,
+        "username": username,
+        "email": email,
+        "signed_in_at": datetime.now(timezone.utc).isoformat(),
+        "device": device or "",
+        "ip_address": ip_address or "",
+        "location": location or "",
     }
