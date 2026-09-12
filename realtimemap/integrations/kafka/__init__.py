@@ -4,17 +4,33 @@ __all__ = [
     "USER_REGISTERED",
     "USER_UPDATED",
     "USER_DELETED",
+    "USER_VERIFY_REQUESTED",
+    "USER_PASSWORD_FORGOTTEN",
+    "USER_PASSWORD_CHANGED",
+    "USER_LOGGED_IN",
     "make_envelope",
     "make_headers",
     "user_registered_payload",
+    "verify_requested_payload",
+    "password_forgotten_payload",
+    "password_changed_payload",
+    "logged_in_payload",
 ]
 
 from .events import (
     USER_DELETED,
+    USER_LOGGED_IN,
+    USER_PASSWORD_CHANGED,
+    USER_PASSWORD_FORGOTTEN,
     USER_REGISTERED,
     USER_UPDATED,
+    USER_VERIFY_REQUESTED,
+    logged_in_payload,
     make_envelope,
     make_headers,
+    password_changed_payload,
+    password_forgotten_payload,
     user_registered_payload,
+    verify_requested_payload,
 )
 from .producer import KafkaProducerClient, kafka_producer
