@@ -18,6 +18,10 @@ fastapi_users = FastAPIUsers[User, int](
 
 current_active_user = fastapi_users.current_user(active=True)
 current_active_superuser = fastapi_users.current_user(active=True, superuser=True)
+# Отдаёт пару (пользователь, токен). Токен нужен там, где важно знать не
+# только кто пришёл, но и по какой именно сессии — например, чтобы пометить
+# её текущей в списке устройств и не завершить самому себе доступ.
+current_active_user_token = fastapi_users.authenticator.current_user_token(active=True)
 
 
 async def get_current_user(

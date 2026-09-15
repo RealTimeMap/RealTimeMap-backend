@@ -1,3 +1,5 @@
+import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from fastapi import Request
@@ -6,14 +8,23 @@ from fastapi_users_db_sqlalchemy import (
     SQLAlchemyBaseOAuthAccountTable,
 )
 from fastapi_users_db_sqlalchemy.access_token import (
-    SQLAlchemyAccessTokenDatabase,
     SQLAlchemyBaseAccessTokenTable,
 )
+from fastapi_users_db_sqlalchemy.generics import TIMESTAMPAware, now_utc
 from jinja2 import Template
-from sqlalchemy import String, Integer, ForeignKey, event, Connection
+from sqlalchemy import (
+    String,
+    Integer,
+    ForeignKey,
+    Index,
+    event,
+    Connection,
+    Uuid,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship, declared_attr
 from sqlalchemy_file import ImageField
 
+from auth.access_token_database import SessionAccessTokenDatabase
 from auth.user_database import MySQLAlchemyUserDatabase
 from modules import BaseSqlModel
 from modules.mixins import IntIdMixin, TimeMarkMixin
@@ -29,7 +40,6 @@ if TYPE_CHECKING:
 
 
 class OAuthAccount(SQLAlchemyBaseOAuthAccountTable[int], BaseSqlModel, IntIdMixin):
-
     @declared_attr
     def user_id(cls):
         return mapped_column(
@@ -118,23 +128,55 @@ class User(BaseSqlModel, IntIdMixin, SQLAlchemyBaseUserTable[int], TimeMarkMixin
             autoescape=True,
         )
         return temp.render(
-            username=self.username,
-            id=self.id,
-            email=self.email,
-            level=self.level
+            username=self.username, id=self.id, email=self.email, level=self.level
         )
 
 
 class AccessToken(BaseSqlModel, SQLAlchemyBaseAccessTokenTable[int]):
+    """Активная сессия пользователя.
+
+    Токен здесь и есть сессия: DatabaseStrategy кладёт в эту таблицу строку на
+    каждый вход и удаляет её при выходе. Поля ниже — метаданные, по которым
+    пользователь узнаёт свои сессии в списке устройств.
+
+    Адресуется сессия снаружи по `session_id`, а не по `token`: сам токен —
+    действующий bearer, и отдавать его в списке сессий нельзя.
+    """
+
     user_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("users.id", ondelete="cascade"),
         nullable=False,
+        index=True,
+    )
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        unique=True,
+        nullable=False,
+        index=True,
+        default=uuid.uuid4,
+    )
+    user_agent: Mapped[str] = mapped_column(String(512), nullable=True)
+    ip_address: Mapped[str] = mapped_column(String(45), nullable=True)
+    device_name: Mapped[str] = mapped_column(String(128), nullable=True)
+    last_used_at: Mapped[datetime] = mapped_column(
+        TIMESTAMPAware(timezone=True),
+        nullable=False,
+        default=now_utc,
+    )
+
+    # Список сессий — это выборка по владельцу с сортировкой по активности.
+    __table_args__ = (
+        Index(
+            "ix_access_tokens_user_id_last_used_at",
+            "user_id",
+            "last_used_at",
+        ),
     )
 
     @classmethod
     def get_db(cls, session: "AsyncSession"):
-        return SQLAlchemyAccessTokenDatabase(session, cls)
+        return SessionAccessTokenDatabase(session, cls)
 
 
 @event.listens_for(User, "after_insert")

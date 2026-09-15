@@ -29,7 +29,7 @@ from integrations.kafka import (
     user_registered_payload,
     verify_requested_payload,
 )
-from modules import User
+from modules import AccessToken, User
 from modules.user.schemas import UserCreate
 
 log = logging.getLogger(__name__)
@@ -179,6 +179,9 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         self, user: User, request: Optional[Request] = None
     ) -> None:
         log.info("User %r has changed their password", user.id)
+
+        await self._revoke_sessions_after_password_change(user)
+
         device, ip_address = self._request_context(request)
         await self._publish(
             USER_PASSWORD_CHANGED,
@@ -190,6 +193,34 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
                 device=device,
                 ip_address=ip_address,
             ),
+        )
+
+    async def _revoke_sessions_after_password_change(self, user: User) -> None:
+        """Завершает все сессии пользователя после смены пароля.
+
+        Без этого угнавший сессию переживает смену пароля жертвой: токен в
+        таблице остаётся валидным, а смена пароля именно этого и должна не
+        допускать. Завершаются все сессии без исключений — сброс пароля идёт
+        по ссылке из письма, а не из активной сессии, и сохранять здесь
+        нечего.
+
+        Таблица токенов берётся из той же сессии БД, что и user_db: отдельное
+        подключение здесь означало бы запись мимо текущей транзакции.
+        """
+        if not conf.api.v1.auth.revoke_sessions_on_password_change:
+            return
+
+        session = getattr(self.user_db, "session", None)
+        if session is None:
+            log.warning(
+                "Cannot revoke sessions for user %r: user_db has no session", user.id
+            )
+            return
+
+        access_tokens_db = AccessToken.get_db(session=session)
+        revoked = await access_tokens_db.delete_by_user(user.id)
+        log.info(
+            "Revoked %d sessions of user %r after password change", revoked, user.id
         )
 
     async def on_after_login(

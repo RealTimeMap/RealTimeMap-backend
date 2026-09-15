@@ -12,6 +12,19 @@ class AuthPrefix(BaseModel):
     google_client_id: Optional[str] = None
     google_client_secret: Optional[str] = None
 
+    # Брать ли адрес клиента из X-Forwarded-For.
+    #
+    # Включать только если сервис недоступен в обход gateway: заголовок
+    # подделывается клиентом, и при прямом доступе адрес в списке сессий
+    # становится тем, что клиент сам захотел написать.
+    trust_forwarded_for: bool = False
+
+    # Разлогинивать ли остальные сессии при смене пароля.
+    #
+    # Включено по умолчанию: иначе тот, кто увёл сессию, переживает смену
+    # пароля жертвой — а смена пароля именно этого и должна не допускать.
+    revoke_sessions_on_password_change: bool = True
+
     @property
     def activate_google_auth(self) -> bool:
         if self.google_client_id and self.google_client_secret:
