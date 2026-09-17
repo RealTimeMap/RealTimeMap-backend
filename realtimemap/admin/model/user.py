@@ -5,6 +5,7 @@ from fastapi_users.password import PasswordHelper
 from jinja2 import Environment, FileSystemLoader
 from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import get_history
 from sqlalchemy.orm import joinedload
 from starlette.datastructures import FormData
 from starlette.requests import Request
@@ -17,6 +18,13 @@ from starlette_admin.exceptions import FormValidationError, ActionFailed
 
 from admin.model.base import BaseModelAdmin
 from core.config import conf
+from integrations.kafka import (
+    USER_UPDATED,
+    kafka_producer,
+    make_envelope,
+    make_headers,
+    user_updated_payload,
+)
 from modules import User
 from modules.user_ban.dependencies import get_user_ban_repository
 from modules.user_ban.model import BanReason
@@ -69,6 +77,52 @@ class AdminUser(BaseModelAdmin):
         user_password = data["hashed_password"]
         hashed_password = helper.hash(password=user_password)
         data["hashed_password"] = hashed_password
+
+    async def before_edit(
+        self, request: Request, data: Dict[str, Any], obj: Any
+    ) -> None:
+        """Запоминает, менялись ли права.
+
+        Событие шлётся только на реальную смену признака: форма отправляется
+        целиком, и без сравнения со старым значением user.updated уезжал бы на
+        каждую правку соседнего поля.
+
+        Старое значение берётся из истории атрибута SQLAlchemy, а не из
+        obj.is_superuser: к моменту вызова хука _populate_obj уже присвоил
+        объекту новое значение, и прямое чтение показало бы его же.
+        История остаётся достоверной, пока сессия не сделала flush.
+        """
+        history = get_history(obj, "is_superuser")
+        request.state.is_superuser_changed = history.has_changes()
+
+    async def after_edit(self, request: Request, obj: Any) -> None:
+        if not getattr(request.state, "is_superuser_changed", False):
+            return
+        await self._publish_admin_changed(obj)
+
+    async def after_create(self, request: Request, obj: Any) -> None:
+        # Пользователь, заведённый админом сразу с правами: событие
+        # регистрации отсюда не идёт, а social-service о правах узнать должен.
+        if not obj.is_superuser:
+            return
+        await self._publish_admin_changed(obj)
+
+    @staticmethod
+    async def _publish_admin_changed(user: Any) -> None:
+        """Публикует смену прав.
+
+        Сбой отправки гасится внутри kafka_producer.send: правка в админке уже
+        применена, и падать из-за недоступной шины ей нельзя.
+        """
+        await kafka_producer.send(
+            topic=conf.kafka.user_events_topic,
+            value=make_envelope(
+                USER_UPDATED,
+                user_updated_payload(user_id=user.id, is_admin=bool(user.is_superuser)),
+            ),
+            key=str(user.id),
+            headers=make_headers(USER_UPDATED, user_id=user.id, source_id=user.id),
+        )
 
     async def validate(self, request: Request, data: Dict[str, Any]) -> None:
         errors: Dict[str, str] = dict()

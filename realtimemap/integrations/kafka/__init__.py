@@ -1,6 +1,9 @@
 __all__ = [
     "KafkaProducerClient",
     "kafka_producer",
+    "SocialEventsConsumer",
+    "social_events_consumer",
+    "PROFILE_UPDATED",
     "USER_REGISTERED",
     "USER_UPDATED",
     "USER_DELETED",
@@ -11,6 +14,7 @@ __all__ = [
     "make_envelope",
     "make_headers",
     "user_registered_payload",
+    "user_updated_payload",
     "verify_requested_payload",
     "password_forgotten_payload",
     "password_changed_payload",
@@ -18,6 +22,7 @@ __all__ = [
 ]
 
 from .events import (
+    PROFILE_UPDATED,
     USER_DELETED,
     USER_LOGGED_IN,
     USER_PASSWORD_CHANGED,
@@ -31,6 +36,8 @@ from .events import (
     password_changed_payload,
     password_forgotten_payload,
     user_registered_payload,
+    user_updated_payload,
     verify_requested_payload,
 )
+from .consumer import SocialEventsConsumer, social_events_consumer
 from .producer import KafkaProducerClient, kafka_producer

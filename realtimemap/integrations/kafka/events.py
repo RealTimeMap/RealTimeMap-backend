@@ -34,6 +34,14 @@ USER_PASSWORD_FORGOTTEN = "user.password_forgotten"
 USER_PASSWORD_CHANGED = "user.password_changed"
 USER_LOGGED_IN = "user.logged_in"
 
+# Входящее событие social-service: пользователь отредактировал профиль.
+#
+# Публикуется в его собственный топик (social-service.events), а не в
+# user-service: в тот пишет этот сервис, и общий топик замкнул бы цикл —
+# свои же события приезжали бы обратно в консьюмер.
+# Согласовано с pkg/transport/kafka/events/profile.go.
+PROFILE_UPDATED = "profile.updated"
+
 
 def make_envelope(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
     """Собирает конверт события.
@@ -77,11 +85,16 @@ def user_registered_payload(
     phone: Optional[str],
     is_verified: bool,
     oauth: bool,
+    is_admin: bool = False,
 ) -> dict[str, Any]:
     """Payload события регистрации.
 
     Ключи совпадают с UserRegisteredPayload в Go — переименование поля здесь
     молча ломает разбор на стороне smtp-service.
+
+    is_admin при обычной регистрации всегда False: админку выдают позже, через
+    админку или миграцию. Поле едет всё равно — social-service заводит профиль
+    ровно из этого события и спросить права отдельно не может.
     """
     return {
         "user_id": user_id,
@@ -90,7 +103,24 @@ def user_registered_payload(
         "phone": phone,
         "is_verified": is_verified,
         "oauth": oauth,
+        "is_admin": is_admin,
         "registered_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def user_updated_payload(user_id: int, is_admin: bool) -> dict[str, Any]:
+    """Payload изменения пользователя.
+
+    Сейчас событие несёт только признак администратора: остальные поля
+    профиля (username, tag, аватар) редактируются в social-service, и слать
+    их отсюда значило бы затирать свежую правку.
+
+    Ключ is_admin присутствует всегда — потребитель отличает явный False
+    (админка снята) от отсутствия ключа (событие не про права).
+    """
+    return {
+        "user_id": user_id,
+        "is_admin": is_admin,
     }
 
 

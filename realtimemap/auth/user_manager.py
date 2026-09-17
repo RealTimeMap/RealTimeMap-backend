@@ -19,6 +19,7 @@ from integrations.kafka import (
     USER_PASSWORD_CHANGED,
     USER_PASSWORD_FORGOTTEN,
     USER_REGISTERED,
+    USER_UPDATED,
     USER_VERIFY_REQUESTED,
     kafka_producer,
     logged_in_payload,
@@ -27,6 +28,7 @@ from integrations.kafka import (
     password_changed_payload,
     password_forgotten_payload,
     user_registered_payload,
+    user_updated_payload,
     verify_requested_payload,
 )
 from modules import AccessToken, User
@@ -52,6 +54,22 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             value=make_envelope(event_type, payload),
             key=str(user.id),
             headers=make_headers(event_type, user_id=user.id, source_id=user.id),
+        )
+
+    async def publish_admin_changed(self, user: User) -> None:
+        """Сообщает о смене признака администратора.
+
+        Права живут здесь, а потребители (social-service) держат копию для
+        оформления выдачи. Без события копия застыла бы на значении момента
+        регистрации.
+
+        Вызывается из мест, где меняется is_superuser: админка, ручные
+        сценарии выдачи прав.
+        """
+        await self._publish(
+            USER_UPDATED,
+            user,
+            user_updated_payload(user_id=user.id, is_admin=user.is_superuser),
         )
 
     @staticmethod
@@ -85,6 +103,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             phone=user.phone,
             is_verified=user.is_verified,
             oauth=bool(getattr(user, "oauth_accounts", None)),
+            is_admin=user.is_superuser,
         )
         # Ключ — user_id: события одного пользователя попадают в одну партицию
         # и обрабатываются по порядку.

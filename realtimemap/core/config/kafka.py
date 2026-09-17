@@ -12,6 +12,19 @@ class KafkaConfig(BaseModel):
     # Согласован с pkg/transport/kafka/topic.UserEvents в Go-сервисах.
     user_events_topic: str = "user-service"
 
+    # Топик social-service: оттуда приезжает profile.updated.
+    # Согласован с pkg/transport/kafka/topic.SocialEvents.
+    social_events_topic: str = "social-service.events"
+
+    # Группа консьюмера. Своя на сервис: смещения не должны делиться с
+    # другими потребителями того же топика.
+    consumer_group_id: str = "auth-service"
+
     request_timeout_ms: int = Field(default=10_000, ge=1_000)
     retry_backoff_ms: int = Field(default=100, ge=10)
     enabled: bool = True
+
+    # Консьюмер выключен по умолчанию: он нужен только там, где поднят
+    # social-service. Продюсер от флага не зависит — письма и заведение
+    # профиля ломать нельзя.
+    consumer_enabled: bool = False

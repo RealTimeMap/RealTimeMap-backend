@@ -9,6 +9,9 @@ services:
     command: ../.venv/bin/python run_main.py
     environment:
       APP_CONFIG__KAFKA__BOOTSTRAP_SERVERS: kafka:9092
+      # Приём profile.updated из social-service: там редактируется username,
+      # который этот сервис отдаёт gateway в заголовке X-User-Name.
+      APP_CONFIG__KAFKA__CONSUMER_ENABLED: "true"
     networks:
       - app-network
       - web
