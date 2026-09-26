@@ -15,6 +15,7 @@ from starlette.responses import Response
 from auth.base import MyBaseUserDatabase
 from core.config import conf
 from integrations.kafka import (
+    USER_DELETED,
     USER_LOGGED_IN,
     USER_PASSWORD_CHANGED,
     USER_PASSWORD_FORGOTTEN,
@@ -27,6 +28,7 @@ from integrations.kafka import (
     make_headers,
     password_changed_payload,
     password_forgotten_payload,
+    user_deleted_payload,
     user_registered_payload,
     user_updated_payload,
     verify_requested_payload,
@@ -140,6 +142,42 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             await self.user_db.update(user, {"hashed_password": updated_password_hash})
 
         return user
+
+    async def delete_account(
+        self,
+        user: User,
+        password: str,
+        request: Optional[Request] = None,
+    ) -> None:
+        """Удаляет аккаунт по запросу самого пользователя.
+
+        Пароль спрашивается повторно: токен мог утечь, а удаление необратимо.
+
+        Raises:
+            exceptions.InvalidPasswordException: пароль не совпал.
+        """
+        verified, _ = self.password_helper.verify_and_update(
+            password, user.hashed_password
+        )
+        if not verified:
+            raise exceptions.InvalidPasswordException(reason="Invalid password")
+
+        await self.delete(user, request)
+
+    async def on_after_delete(
+        self, user: User, request: Optional[Request] = None
+    ) -> None:
+        """Сообщает остальным сервисам, что аккаунт удалён.
+
+        Вызывается после коммита: событие о несостоявшемся удалении стёрло бы
+        данные живого пользователя в других сервисах.
+        """
+        log.info("User %r deleted their account", user.id)
+        await self._publish(
+            USER_DELETED,
+            user,
+            user_deleted_payload(user_id=user.id, email=user.email),
+        )
 
     async def get_by_username(self, username: str) -> models.UP:
         user = await self.user_db.get_by_username(username)

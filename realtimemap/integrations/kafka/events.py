@@ -124,6 +124,23 @@ def user_updated_payload(user_id: int, is_admin: bool) -> dict[str, Any]:
     }
 
 
+def user_deleted_payload(user_id: int, email: str) -> dict[str, Any]:
+    """Payload удаления аккаунта.
+
+    По событию каждый сервис стирает или обезличивает свои данные
+    пользователя. Ключи совпадают с UserDeletedPayload в Go.
+
+    email едет в событии ради smtp-service: письма там хранятся по адресу
+    получателя, а не по user_id, и спросить адрес уже удалённого пользователя
+    не у кого.
+    """
+    return {
+        "user_id": user_id,
+        "email": email,
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 def verify_requested_payload(
     user_id: int,
     username: str,

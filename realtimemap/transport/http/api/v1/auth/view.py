@@ -1,17 +1,24 @@
 from typing import Annotated, Optional, TYPE_CHECKING
 from urllib.parse import quote
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, HTTPException, Request, Response, status
 from fastapi.params import Depends
+from fastapi_users import exceptions as fastapi_users_exceptions
 
+from auth.user_manager import UserManager
 from core.config import conf
 from dependencies.auth.backend import authentication_backend, oauth_backend
+from dependencies.auth.manager import get_user_manager
 from dependencies.auth.optional import get_current_user_optional
-from modules.user.schemas import UserRead, UserCreate
+from modules.user.schemas import UserDeleteRequest, UserRead, UserCreate
 from modules.user.service_depenencies import get_user_service
 from modules.user_ban.dependencies import get_user_ban_repository
 from modules.user_ban.model import BanReason
-from .fastapi_users import fastapi_users, get_current_user
+from .fastapi_users import (
+    fastapi_users,
+    get_current_user,
+    get_current_user_without_ban,
+)
 
 if TYPE_CHECKING:
     from modules.user.model import User
@@ -158,5 +165,40 @@ async def verify_request_token_optional(
 
     response.headers["X-User-Anonymous"] = "false"
     _set_user_headers(response, user, ban)
+
+    return
+
+
+@router.delete(
+    "/me",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Удалить свой аккаунт",
+    responses={
+        status.HTTP_400_BAD_REQUEST: {"description": "Неверный пароль"},
+        status.HTTP_403_FORBIDDEN: {"description": "На аккаунте активный бан"},
+    },
+)
+async def delete_me(
+    body: UserDeleteRequest,
+    user: Annotated["User", Depends(get_current_user_without_ban)],
+    user_manager: Annotated[UserManager, Depends(get_user_manager)],
+    request: Request,
+):
+    """Необратимо удаляет аккаунт текущего пользователя.
+
+    Здесь стираются учётная запись, сессии и OAuth-привязки. Данные в
+    остальных сервисах (профиль, метки, прогресс, push-токены, письма)
+    удаляются или обезличиваются по событию user.deleted.
+
+    Пока бан активен, удаление запрещено: иначе им можно было бы обнулить
+    санкции и зарегистрироваться заново на тот же адрес.
+    """
+    try:
+        await user_manager.delete_account(user, body.password, request)
+    except fastapi_users_exceptions.InvalidPasswordException:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="DELETE_ACCOUNT_BAD_PASSWORD",
+        )
 
     return

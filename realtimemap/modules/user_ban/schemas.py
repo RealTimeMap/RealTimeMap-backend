@@ -67,7 +67,8 @@ class UsersBanCreate(BaseModel):
 class ReadUsersBan(BaseModel):
     id: int
     user_id: int
-    moderator_id: int
+    # None — модератор, выдавший бан, удалил аккаунт.
+    moderator_id: Optional[int]
     reason: BanReason
 
     model_config = ConfigDict(from_attributes=True)

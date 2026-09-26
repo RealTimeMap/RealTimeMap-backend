@@ -4,7 +4,7 @@ from fastapi_users_db_sqlalchemy import (
     SQLAlchemyUserDatabase,
     SQLAlchemyBaseOAuthAccountTable,
 )
-from sqlalchemy import select, func, or_
+from sqlalchemy import delete, select, func, or_
 
 if TYPE_CHECKING:
     from modules.user.model import User
@@ -42,3 +42,44 @@ class MySQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
 
     async def create(self, create_dict: dict[str, Any]) -> "User":
         return await super().create(create_dict)
+
+    async def delete(self, user: "User") -> None:
+        """Удаляет пользователя вместе с зависимыми строками одной транзакцией.
+
+        Удаление идёт SQL-запросом, а не session.delete: ORM-каскад у
+        User.issued_bans (delete-orphan) стёр бы баны, которые модератор
+        выдал другим людям, и снял бы их. Внешний ключ moderator_id в БД
+        объявлен с ON DELETE SET NULL — такие баны переживут удаление.
+
+        Таблицы chat_participants, messages, user_subscriptions и
+        user_metrics ссылаются на users без ON DELETE (у user_metrics модель
+        обещает SET NULL, но миграция создала ключ без него), и DELETE FROM
+        users упал бы на первой же строке — их чистим явно. Остальное
+        (токены, OAuth-аккаунты, свои баны, метки, комментарии) удаляет
+        каскад внешних ключей.
+        """
+        # Импорт внутри метода: модели импортируют этот модуль сами.
+        from modules import Message, UserMetric, UserSubscription
+        from modules.chat.model import chat_participants_table
+
+        user_id = user.id
+        await self.session.execute(
+            delete(UserMetric).where(UserMetric.user_id == user_id)
+        )
+        await self.session.execute(delete(Message).where(Message.sender_id == user_id))
+        await self.session.execute(
+            delete(chat_participants_table).where(
+                chat_participants_table.c.user_id == user_id
+            )
+        )
+        await self.session.execute(
+            delete(UserSubscription).where(UserSubscription.user_id == user_id)
+        )
+        await self.session.execute(
+            delete(self.user_table).where(self.user_table.id == user_id)
+        )
+        await self.session.commit()
+
+        # Объект остался в identity map сессии: убираем, чтобы следующий
+        # flush не попытался его обновить.
+        self.session.expunge(user)

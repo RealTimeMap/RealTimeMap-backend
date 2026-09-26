@@ -78,11 +78,13 @@ class User(BaseSqlModel, IntIdMixin, SQLAlchemyBaseUserTable[int], TimeMarkMixin
         cascade="all, delete-orphan",
         lazy="noload",
     )
+    # Без delete-каскада: баны, выданные модератором, переживают удаление его
+    # аккаунта — БД сама обнулит moderator_id (ON DELETE SET NULL).
     issued_bans: Mapped[List["UsersBan"]] = relationship(
         "UsersBan",
         back_populates="moderator",
         foreign_keys="UsersBan.moderator_id",
-        cascade="all, delete-orphan",
+        passive_deletes=True,
         lazy="selectin",
     )
     chats: Mapped[List["Chat"]] = relationship(

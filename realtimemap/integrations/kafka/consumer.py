@@ -10,6 +10,7 @@
 
 import asyncio
 import logging
+import os
 from typing import Any, Optional
 
 import orjson
@@ -59,6 +60,9 @@ class SocialEventsConsumer:
             logger.info("Kafka consumer disabled by config")
             return
 
+        if not self._should_run_here():
+            return
+
         consumer = AIOKafkaConsumer(
             conf.kafka.social_events_topic,
             bootstrap_servers=conf.kafka.bootstrap_servers,
@@ -84,6 +88,35 @@ class SocialEventsConsumer:
             conf.kafka.social_events_topic,
             conf.kafka.consumer_group_id,
         )
+
+    @staticmethod
+    def _should_run_here() -> bool:
+        """Решает, поднимать ли консьюмер в этом процессе.
+
+        Gunicorn форкает несколько воркеров, и каждый выполняет lifespan
+        целиком: на N воркеров поднимается N консьюмеров в одной группе.
+        Партиция достаётся одному, остальные простаивают, а каждый старт даёт
+        серию ребалансов. Данные от этого не портятся — группа гарантирует,
+        что сообщение обработает ровно один, — но лог превращается в шум.
+
+        Ограничить консьюмер одним процессом штатным способом нельзя:
+        gunicorn не выдаёт воркеру его номер через окружение (worker_age
+        живёт в объекте воркера мастер-процесса). Поэтому флаг задаётся
+        снаружи: CONSUMER_PROCESS=0 выключает консьюмер в этом контейнере.
+
+        По умолчанию консьюмер включён — при одном процессе (uvicorn,
+        локальный запуск, тесты) ничего настраивать не нужно, а лишние
+        подписчики в группе безопасны.
+        """
+        flag = os.getenv("CONSUMER_PROCESS")
+        if flag is None:
+            return True
+
+        if flag.strip().lower() in {"0", "false", "no"}:
+            logger.info("Kafka consumer disabled in this process by CONSUMER_PROCESS")
+            return False
+
+        return True
 
     async def stop(self) -> None:
         if self._task is not None:
@@ -130,6 +163,7 @@ class SocialEventsConsumer:
 
         if event_type != PROFILE_UPDATED:
             # Событие чужого типа — не наше дело.
+            logger.debug("Ignoring event type=%r", event_type)
             return
 
         try:
@@ -153,6 +187,11 @@ class SocialEventsConsumer:
 
         if not isinstance(username, str) or not username:
             # Событие не про имя — применять нечего.
+            logger.debug(
+                "Skipping %s for user %s: no username in payload",
+                PROFILE_UPDATED,
+                user_id,
+            )
             return
 
         async with db_helper.session_factory() as session:
@@ -168,6 +207,12 @@ class SocialEventsConsumer:
             # Событие могло приехать повторно (Kafka at-least-once) или не
             # менять имени — лишний UPDATE и конфликт по unique не нужны.
             if current == username:
+                logger.debug(
+                    "Skipping %s for user %s: username already %r",
+                    PROFILE_UPDATED,
+                    user_id,
+                    username,
+                )
                 return
 
             # Отдельная проверка занятости: username уникален, и гонка с чужой
@@ -189,7 +234,12 @@ class SocialEventsConsumer:
             )
             await session.commit()
 
-            logger.info("Username synced from social-service, user_id=%s", user_id)
+            logger.info(
+                "Username synced from social-service: user_id=%s %r -> %r",
+                user_id,
+                current,
+                username,
+            )
 
 
 social_events_consumer = SocialEventsConsumer()

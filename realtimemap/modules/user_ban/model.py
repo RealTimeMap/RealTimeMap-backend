@@ -42,8 +42,9 @@ class UsersBan(BaseSqlModel, IntIdMixin):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    moderator_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    # NULL — модератор удалил аккаунт; бан при этом остаётся в силе.
+    moderator_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
     # RS

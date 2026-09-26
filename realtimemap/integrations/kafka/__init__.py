@@ -15,6 +15,7 @@ __all__ = [
     "make_headers",
     "user_registered_payload",
     "user_updated_payload",
+    "user_deleted_payload",
     "verify_requested_payload",
     "password_forgotten_payload",
     "password_changed_payload",
@@ -36,6 +37,7 @@ from .events import (
     password_changed_payload,
     password_forgotten_payload,
     user_registered_payload,
+    user_deleted_payload,
     user_updated_payload,
     verify_requested_payload,
 )

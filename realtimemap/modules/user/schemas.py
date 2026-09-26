@@ -98,3 +98,13 @@ class UserGameFicationUpdate(UserUpdate):
 class UserLogin(BaseModel):
     username: str
     password: str
+
+
+class UserDeleteRequest(BaseModel):
+    """Тело запроса на удаление аккаунта.
+
+    Пароль — повторное подтверждение: удаление необратимо, а одного токена
+    мало, если он утёк.
+    """
+
+    password: str = Field(min_length=1, description="Текущий пароль")
