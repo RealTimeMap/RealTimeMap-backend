@@ -79,6 +79,8 @@ services:
       - "50052:50052"
     networks:
       - app-network
+      # admin-service ходит сюда по gRPC как grpc-container:50052
+      - service-network
 
 networks:
   app-network:
