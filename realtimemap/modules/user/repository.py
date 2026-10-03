@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, Sequence, Optional, List
+from typing import TYPE_CHECKING, Sequence, Optional, List, Tuple
 
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, func
 
 from core.common.repository import UserRepository
 from database.adapter import PgAdapter
@@ -82,3 +82,40 @@ class PgUserRepository(UserRepository):
         stmt = select(User).where(User.is_active).order_by(User.level.desc()).limit(10)
         users = await self.adapter.execute_query(stmt)
         return users
+
+    async def list_for_admin(
+        self,
+        offset: int,
+        limit: int,
+        search: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        is_superuser: Optional[bool] = None,
+    ) -> Tuple[Sequence[User], int]:
+        conditions = []
+        if search:
+            pattern = f"%{search}%"
+            conditions.append(
+                or_(
+                    User.username.ilike(pattern),
+                    User.email.ilike(pattern),
+                    User.phone.ilike(pattern),
+                )
+            )
+        if is_active is not None:
+            conditions.append(User.is_active.is_(is_active))
+        if is_superuser is not None:
+            conditions.append(User.is_superuser.is_(is_superuser))
+
+        total = await self.adapter.execute_scalar(
+            select(func.count(User.id)).where(*conditions)
+        )
+        stmt = (
+            select(User)
+            .where(*conditions)
+            .order_by(User.id.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        # oauth_accounts грузится joined — без unique строки задвоятся.
+        items = await self.adapter.execute_query(stmt, unique=True)
+        return items, total or 0

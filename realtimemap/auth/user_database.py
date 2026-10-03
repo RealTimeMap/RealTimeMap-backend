@@ -44,21 +44,6 @@ class MySQLAlchemyUserDatabase(SQLAlchemyUserDatabase):
         return await super().create(create_dict)
 
     async def delete(self, user: "User") -> None:
-        """Удаляет пользователя вместе с зависимыми строками одной транзакцией.
-
-        Удаление идёт SQL-запросом, а не session.delete: ORM-каскад у
-        User.issued_bans (delete-orphan) стёр бы баны, которые модератор
-        выдал другим людям, и снял бы их. Внешний ключ moderator_id в БД
-        объявлен с ON DELETE SET NULL — такие баны переживут удаление.
-
-        Таблицы chat_participants, messages, user_subscriptions и
-        user_metrics ссылаются на users без ON DELETE (у user_metrics модель
-        обещает SET NULL, но миграция создала ключ без него), и DELETE FROM
-        users упал бы на первой же строке — их чистим явно. Остальное
-        (токены, OAuth-аккаунты, свои баны, метки, комментарии) удаляет
-        каскад внешних ключей.
-        """
-        # Импорт внутри метода: модели импортируют этот модуль сами.
         from modules import Message, UserMetric, UserSubscription
         from modules.chat.model import chat_participants_table
 

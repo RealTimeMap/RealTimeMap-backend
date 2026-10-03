@@ -4,6 +4,17 @@ package userservice;
 
 service UserService{
   rpc GetUserById(UserRequest) returns (UserResponse) {}
+
+  // Итоговые роли и права пользователя — тот же набор, что gateway
+  // кладёт в X-User-Roles / X-User-Permissions.
+  rpc GetUserAccess(UserRequest) returns (UserAccessResponse) {}
+
+  // Проверка одного права; scope пустой — глобальная проверка.
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse) {}
+
+  // Сервис объявляет свои права при старте. Идемпотентно: повторный вызов
+  // обновляет описания и не трогает гранты ролей.
+  rpc RegisterPermissions(RegisterPermissionsRequest) returns (RegisterPermissionsResponse) {}
 }
 
 message UserRequest {
@@ -15,4 +26,39 @@ message UserResponse {
   string username = 2;
   string email = 3;
   bool is_superuser = 4;
+}
+
+message UserAccessResponse {
+  int64 user_id = 1;
+  bool is_superuser = 2;
+  // Слаги ролей; scoped-роль записана как `slug@scope`.
+  repeated string roles = 3;
+  // Коды прав; scoped-право — `code@scope`, суперпользователь — `*`.
+  repeated string permissions = 4;
+  int32 priority = 5;
+}
+
+message CheckPermissionRequest {
+  int64 user_id = 1;
+  string permission = 2;
+  string scope = 3;
+}
+
+message CheckPermissionResponse {
+  bool allowed = 1;
+}
+
+message PermissionDefinition {
+  string code = 1;
+  string description = 2;
+}
+
+message RegisterPermissionsRequest {
+  // Сервис-владелец, например mark-service.
+  string service = 1;
+  repeated PermissionDefinition permissions = 2;
+}
+
+message RegisterPermissionsResponse {
+  int32 registered = 1;
 }

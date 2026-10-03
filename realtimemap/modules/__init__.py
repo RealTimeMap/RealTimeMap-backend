@@ -28,6 +28,11 @@ __all__ = [
     "UserExpHistory",
     "OAuthAccount",
     "UserMetric",
+    "Permission",
+    "Role",
+    "RolePermission",
+    "UserRole",
+    "UserPermission",
 ]
 
 
@@ -51,6 +56,7 @@ from .mark.model import Mark
 from .mark_comment.model import Comment, CommentStat, CommentReaction
 from .message import Message
 from .metrics.model import UserMetric
+from .rbac.model import Permission, Role, RolePermission, UserRole, UserPermission
 from .request_log.model import RequestLog
 from .subscription.model import SubscriptionPlan
 from .user.model import User, AccessToken, OAuthAccount

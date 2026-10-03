@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Sequence, Tuple
 
 from core.common.repository import BaseRepository
 from modules.user.model import User
@@ -33,4 +33,16 @@ class UserRepository(BaseRepository[User, UserCreate, UserUpdate], ABC):
         Метод для получения лидеров по уровню
         :return:
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def list_for_admin(
+        self,
+        offset: int,
+        limit: int,
+        search: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        is_superuser: Optional[bool] = None,
+    ) -> Tuple[Sequence[User], int]:
+        """Страница пользователей для админ-панели и общее число под фильтром."""
         raise NotImplementedError()

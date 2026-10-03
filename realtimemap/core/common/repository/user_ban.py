@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 from modules.user_ban.model import UsersBan
 from modules.user_ban.schemas import UpdateUsersBan, UsersBanCreate
@@ -51,4 +51,9 @@ class UsersBanRepository(BaseRepository[UsersBan, UsersBanCreate, UpdateUsersBan
         :param user_id:
         :return:
         """
+        raise NotImplementedError
 
+    @abstractmethod
+    async def get_active_bans(self, user_ids: Sequence[int]) -> List[UsersBan]:
+        """Активные баны пачки пользователей, по одному свежему на пользователя."""
+        raise NotImplementedError

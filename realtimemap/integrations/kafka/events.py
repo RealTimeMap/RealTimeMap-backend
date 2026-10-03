@@ -34,6 +34,12 @@ USER_PASSWORD_FORGOTTEN = "user.password_forgotten"
 USER_PASSWORD_CHANGED = "user.password_changed"
 USER_LOGGED_IN = "user.logged_in"
 
+# Изменились роли или права. user.access_changed — у одного пользователя,
+# rbac.policy_changed — в самой политике (роль, её гранты, каталог), что
+# задевает сразу многих. По второму потребитель сбрасывает весь кэш прав.
+USER_ACCESS_CHANGED = "user.access_changed"
+RBAC_POLICY_CHANGED = "rbac.policy_changed"
+
 # Входящее событие social-service: пользователь отредактировал профиль.
 #
 # Публикуется в его собственный топик (social-service.events), а не в
@@ -217,4 +223,29 @@ def logged_in_payload(
         "device": device or "",
         "ip_address": ip_address or "",
         "location": location or "",
+    }
+
+
+def user_access_changed_payload(
+    user_id: int,
+    roles: list[str],
+    permissions: list[str],
+    is_admin: bool,
+) -> dict[str, Any]:
+    """Payload смены прав: итоговый набор, а не дельта."""
+    return {
+        "user_id": user_id,
+        "roles": roles,
+        "permissions": permissions,
+        "is_admin": is_admin,
+        "changed_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def rbac_policy_changed_payload(reason: str, role: Optional[str] = None) -> dict[str, Any]:
+    """Payload изменения политики (роль, гранты, каталог)."""
+    return {
+        "reason": reason,
+        "role": role or "",
+        "changed_at": datetime.now(timezone.utc).isoformat(),
     }

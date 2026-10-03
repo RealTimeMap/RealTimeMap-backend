@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, Sequence, Optional
+from typing import TYPE_CHECKING, Sequence, Optional, List
 
 from sqlalchemy import select, and_, or_, Select
 
@@ -18,20 +18,20 @@ class PgUsersBanRepository(UsersBanRepository):
         self.adapter = adapter
 
     @staticmethod
-    def _base_query(user_id: int) -> Select:
-        current_time = datetime.now()
+    def _active_condition():
+        return and_(
+            UsersBan.unbanned_at.is_(None),
+            or_(
+                UsersBan.is_permanent,
+                UsersBan.banned_until > datetime.now(),
+            ),
+        )
+
+    @classmethod
+    def _base_query(cls, user_id: int) -> Select:
         stmt = (
             select(UsersBan)
-            .where(
-                and_(
-                    UsersBan.user_id == user_id,
-                    UsersBan.unbanned_at.is_(None),
-                    or_(
-                        UsersBan.is_permanent,
-                        UsersBan.banned_until > current_time,
-                    ),
-                )
-            )
+            .where(UsersBan.user_id == user_id, cls._active_condition())
             .order_by(UsersBan.banned_at.desc())
         )
         return stmt
@@ -65,3 +65,13 @@ class PgUsersBanRepository(UsersBanRepository):
         active_ban = await self.adapter.execute_query_one(stmt)
         return active_ban
 
+    async def get_active_bans(self, user_ids: Sequence[int]) -> List[UsersBan]:
+        if not user_ids:
+            return []
+        stmt = (
+            select(UsersBan)
+            .where(UsersBan.user_id.in_(user_ids), self._active_condition())
+            .order_by(UsersBan.user_id, UsersBan.banned_at.desc())
+            .distinct(UsersBan.user_id)
+        )
+        return await self.adapter.execute_query(stmt)

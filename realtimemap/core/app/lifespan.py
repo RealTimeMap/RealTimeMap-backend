@@ -11,6 +11,7 @@ from integrations.kafka import kafka_producer, social_events_consumer
 from integrations.payment.yookassa import YookassaClient
 from modules.events.bus import EventType, event_bus
 from modules.events.gamefication_handler import GameFicationEventHandler
+from modules.rbac.sync import sync_catalog
 from .templating import TemplateManager
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,12 @@ async def lifespan(app: FastAPI):
         logger.warning(
             "Redis connection failed continue without cache and rate limiter"
         )
+
+    # После Redis: синхронизация сбрасывает кэш прав.
+    try:
+        await sync_catalog()
+    except Exception:
+        logger.exception("RBAC catalog sync failed, roles may be outdated")
 
     await kafka_producer.start()
     # Консьюмер после продюсера: обработка события может сама что-то

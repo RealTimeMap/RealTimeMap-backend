@@ -60,6 +60,16 @@ class SessionService:
         log.info("Session %s of user %r revoked", session_id, user_id)
         return access_token
 
+    async def revoke_all_sessions(self, user_id: int) -> int:
+        """Завершает все сессии пользователя — административное действие.
+
+        В отличие от revoke_other_sessions не щадит текущую сессию: модератор
+        завершает чужие устройства, своей среди них нет.
+        """
+        revoked = await self.access_tokens_db.delete_by_user(user_id)
+        log.info("Admin revoked all %d sessions of user %r", revoked, user_id)
+        return revoked
+
     async def revoke_other_sessions(self, user_id: int, current_token: str) -> int:
         """Завершает все сессии, кроме текущей."""
         revoked = await self.access_tokens_db.delete_by_user(

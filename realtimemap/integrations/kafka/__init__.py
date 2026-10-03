@@ -11,6 +11,8 @@ __all__ = [
     "USER_PASSWORD_FORGOTTEN",
     "USER_PASSWORD_CHANGED",
     "USER_LOGGED_IN",
+    "USER_ACCESS_CHANGED",
+    "RBAC_POLICY_CHANGED",
     "make_envelope",
     "make_headers",
     "user_registered_payload",
@@ -20,10 +22,14 @@ __all__ = [
     "password_forgotten_payload",
     "password_changed_payload",
     "logged_in_payload",
+    "user_access_changed_payload",
+    "rbac_policy_changed_payload",
 ]
 
 from .events import (
     PROFILE_UPDATED,
+    RBAC_POLICY_CHANGED,
+    USER_ACCESS_CHANGED,
     USER_DELETED,
     USER_LOGGED_IN,
     USER_PASSWORD_CHANGED,
@@ -32,6 +38,8 @@ from .events import (
     USER_UPDATED,
     USER_VERIFY_REQUESTED,
     logged_in_payload,
+    rbac_policy_changed_payload,
+    user_access_changed_payload,
     make_envelope,
     make_headers,
     password_changed_payload,

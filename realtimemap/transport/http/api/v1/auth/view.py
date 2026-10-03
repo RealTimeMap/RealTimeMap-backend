@@ -10,6 +10,7 @@ from core.config import conf
 from dependencies.auth.backend import authentication_backend, oauth_backend
 from dependencies.auth.manager import get_user_manager
 from dependencies.auth.optional import get_current_user_optional
+from modules.rbac.dependencies import get_rbac_service
 from modules.user.schemas import UserDeleteRequest, UserRead, UserCreate
 from modules.user.service_depenencies import get_user_service
 from modules.user_ban.dependencies import get_user_ban_repository
@@ -21,6 +22,8 @@ from .fastapi_users import (
 )
 
 if TYPE_CHECKING:
+    from modules.rbac.policy import Access
+    from modules.rbac.service import RbacService
     from modules.user.model import User
     from modules.user.service import UserService
     from modules.user_ban.model import UsersBan
@@ -74,6 +77,7 @@ def _set_user_headers(
     response: Response,
     user: "User",
     ban: Optional["UsersBan"],
+    access: "Access",
 ) -> None:
     """
     Проставить заголовки пользователя для gateway.
@@ -87,12 +91,14 @@ def _set_user_headers(
         response: ответ, в который проставляются заголовки
         user: пользователь
         ban: активный бан или None
+        access: итоговые роли и права
     """
 
     response.headers["X-User-ID"] = str(user.id)
     response.headers["X-User-Name"] = quote(user.username)
     response.headers["X-User-Admin"] = "true" if user.is_superuser else "false"
     response.headers["X-User-Ban"] = "true" if ban else "false"
+    _set_access_headers(response, access.roles, access.permissions)
 
     if not ban:
         return
@@ -107,10 +113,19 @@ def _set_user_headers(
     )
 
 
+def _set_access_headers(
+    response: Response, roles: list[str], permissions: list[str]
+) -> None:
+    """Ставятся всегда, даже пустыми, — чтобы gateway не пропустил клиентские."""
+    response.headers["X-User-Roles"] = ",".join(roles)
+    response.headers["X-User-Permissions"] = ",".join(permissions)
+
+
 @router.get("/token-validate")
 async def verify_request_token(
     user: Annotated["User", Depends(get_current_user)],
     user_ban_repo: Annotated["PgUsersBanRepository", Depends(get_user_ban_repository)],
+    rbac: Annotated["RbacService", Depends(get_rbac_service)],
     response: Response,
 ):
     """
@@ -128,7 +143,7 @@ async def verify_request_token(
 
     ban = await user_ban_repo.get_active_user_ban(user.id)
 
-    _set_user_headers(response, user, ban)
+    _set_user_headers(response, user, ban, await rbac.get_access(user))
 
     return
 
@@ -137,6 +152,7 @@ async def verify_request_token(
 async def verify_request_token_optional(
     user: Annotated[Optional["User"], Depends(get_current_user_optional)],
     user_ban_repo: Annotated["PgUsersBanRepository", Depends(get_user_ban_repository)],
+    rbac: Annotated["RbacService", Depends(get_rbac_service)],
     response: Response,
 ):
     """
@@ -159,12 +175,13 @@ async def verify_request_token_optional(
     if not user:
         response.headers["X-User-Anonymous"] = "true"
         response.headers["X-User-Ban"] = "false"
+        _set_access_headers(response, [], [])
         return
 
     ban = await user_ban_repo.get_active_user_ban(user.id)
 
     response.headers["X-User-Anonymous"] = "false"
-    _set_user_headers(response, user, ban)
+    _set_user_headers(response, user, ban, await rbac.get_access(user))
 
     return
 

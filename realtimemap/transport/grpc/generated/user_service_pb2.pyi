@@ -20,4 +20,10 @@ class UserResponse(_message.Message):
     username: str
     email: str
     is_superuser: bool
-    def __init__(self, id: _Optional[int] = ..., username: _Optional[str] = ..., email: _Optional[str] = ..., is_superuser: bool = ...) -> None: ...
+    def __init__(
+        self,
+        id: _Optional[int] = ...,
+        username: _Optional[str] = ...,
+        email: _Optional[str] = ...,
+        is_superuser: bool = ...,
+    ) -> None: ...
